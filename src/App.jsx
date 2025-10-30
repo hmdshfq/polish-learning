@@ -1,0 +1,2873 @@
+import React, { useState, useEffect } from "react";
+import {
+  Book,
+  Award,
+  CheckCircle,
+  XCircle,
+  ArrowRight,
+  RefreshCw,
+  Edit3,
+  Shuffle,
+  Table,
+  Zap,
+  Clock,
+  Repeat,
+  TrendingUp,
+  Target,
+  Calendar,
+  Star,
+  Download,
+  Upload,
+} from "lucide-react";
+
+const PolishGrammarApp = () => {
+  const [section, setSection] = useState("dashboard"); // dashboard, cases, verbs
+  const [currentCase, setCurrentCase] = useState(0);
+  const [currentVerb, setCurrentVerb] = useState(0);
+  const [mode, setMode] = useState("learn");
+  const [difficulty, setDifficulty] = useState("beginner"); // beginner, intermediate, advanced
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [showResults, setShowResults] = useState(false);
+  const [score, setScore] = useState(0);
+  const [fillBlankAnswers, setFillBlankAnswers] = useState({});
+  const [sentenceAnswers, setSentenceAnswers] = useState({});
+
+  // Phase 4: Progress tracking state
+  const [progress, setProgress] = useState({
+    cases: {},
+    verbs: {},
+    totalScore: 0,
+    totalAttempts: 0,
+    streak: 0,
+    lastStudyDate: null,
+    weakAreas: [],
+    masteredTopics: [],
+  });
+
+  // Spaced repetition data
+  const [reviewSchedule, setReviewSchedule] = useState({});
+
+  // Initialize progress on mount
+  useEffect(() => {
+    // Check if user studied today
+    const today = new Date().toDateString();
+    if (progress.lastStudyDate && progress.lastStudyDate === today) {
+      // Already studied today
+    } else if (progress.lastStudyDate) {
+      const lastDate = new Date(progress.lastStudyDate);
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (lastDate.toDateString() === yesterday.toDateString()) {
+        // Studied yesterday, increment streak
+        setProgress((prev) => ({
+          ...prev,
+          streak: prev.streak + 1,
+          lastStudyDate: today,
+        }));
+      } else {
+        // Missed days, reset streak
+        setProgress((prev) => ({ ...prev, streak: 1, lastStudyDate: today }));
+      }
+    }
+  }, []);
+
+  const cases = [
+    {
+      name: "Nominative",
+      polish: "Mianownik",
+      difficulty: "beginner",
+      question: "Kto? Co?",
+      questionEng: "Who? What?",
+      usage:
+        "The subject of the sentence - the person or thing doing the action",
+      analogy:
+        "Think of it as the 'hero' of your sentence - the one doing things",
+      examples: [
+        {
+          polish: "Kot śpi.",
+          english: "The cat is sleeping.",
+          highlight: "Kot",
+        },
+        {
+          polish: "Książka jest interesująca.",
+          english: "The book is interesting.",
+          highlight: "Książka",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question:
+              "Which word is in the Nominative case? '___ jest duży.' (The house is big)",
+            options: ["Domu", "Dom", "Domem", "Domu"],
+            correct: 1,
+            explanation: "Dom (house) is the subject, so it's in Nominative.",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Complete: '___ lubi muzykę.' (The girl likes music)",
+            options: ["Dziewczyna", "Dziewczyny", "Dziewczynie", "Dziewczyną"],
+            correct: 0,
+            explanation: "Dziewczyna is the subject (who likes music).",
+          },
+          {
+            question:
+              "Which is Nominative? '___ są na stole.' (The books are on the table)",
+            options: ["Książki", "Książek", "Książkom", "Książkami"],
+            correct: 0,
+            explanation: "Książki (plural nominative) is the subject.",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Complete with plural Nominative: '___ zawsze mówią prawdę.' (Children always tell the truth)",
+            options: ["Dzieci", "Dziecko", "Dziećmi", "Dzieciom"],
+            correct: 0,
+            explanation:
+              "Dzieci is the irregular nominative plural of dziecko.",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "___ jest piękna.",
+            correct: "Pogoda",
+            options: ["Pogoda", "Pogody", "Pogodzie", "Pogodą"],
+            english: "The weather is beautiful.",
+            hint: "Subject of the sentence",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "___ biega szybko.",
+            correct: "Pies",
+            options: ["Pies", "Psa", "Psu", "Psem"],
+            english: "The dog runs fast.",
+            hint: "Who is running?",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "___ stoją w ogrodzie.",
+            correct: "Drzewa",
+            options: ["Drzewo", "Drzewa", "Drzewom", "Drzew"],
+            english: "The trees are standing in the garden.",
+            hint: "Plural subject",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["jest", "piękny", "Dzień", "dziś"],
+            correct: "Dzień jest dziś piękny",
+            english: "The day is beautiful today",
+            hint: "Subject + verb + adverb + adjective",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["na", "Kot", "śpi", "kanapie"],
+            correct: "Kot śpi na kanapie",
+            english: "The cat is sleeping on the sofa",
+            hint: "Who + action + where",
+          },
+        ],
+        advanced: [
+          {
+            words: ["bardzo", "Studenci", "są", "inteligentni"],
+            correct: "Studenci są bardzo inteligentni",
+            english: "The students are very intelligent",
+            hint: "Subject + verb + adverb + adjective",
+          },
+        ],
+      },
+    },
+    {
+      name: "Genitive",
+      polish: "Dopełniacz",
+      difficulty: "intermediate",
+      question: "Kogo? Czego?",
+      questionEng: "Whose? Of what?",
+      usage:
+        "Shows possession, absence, or negation. Also used after numbers and certain prepositions.",
+      analogy:
+        "Like saying 'of' in English - 'house of Maria' or 'I don't have' (absence)",
+      examples: [
+        {
+          polish: "To jest dom Marii.",
+          english: "This is Maria's house.",
+          highlight: "Marii",
+        },
+        {
+          polish: "Nie mam czasu.",
+          english: "I don't have time.",
+          highlight: "czasu",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: 'Nie mam ___' (I don't have a dog)",
+            options: ["pies", "psa", "psem", "psie"],
+            correct: 1,
+            explanation: "After negation 'nie mam' we use Genitive: psa.",
+          },
+        ],
+        intermediate: [
+          {
+            question:
+              "Complete: 'To jest książka ___' (This is the teacher's book)",
+            options: [
+              "nauczyciel",
+              "nauczyciela",
+              "nauczycielowi",
+              "nauczycielem",
+            ],
+            correct: 1,
+            explanation: "For possession, we use Genitive: nauczyciela.",
+          },
+        ],
+        advanced: [
+          {
+            question: "Complete: 'Nie widzę ___' (I don't see any people)",
+            options: ["ludzie", "ludzi", "ludziom", "ludźmi"],
+            correct: 1,
+            explanation: "Genitive plural of 'ludzie' (people) is 'ludzi'.",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Nie widzę ___.",
+            correct: "kota",
+            options: ["kot", "kota", "kotem", "kotu"],
+            english: "I don't see the cat.",
+            hint: "Negation + whom/what",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "To jest dom ___.",
+            correct: "Piotra",
+            options: ["Piotr", "Piotra", "Piotrowi", "Piotrem"],
+            english: "This is Piotr's house.",
+            hint: "Whose house?",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["nie", "pieniędzy", "mam"],
+            correct: "Nie mam pieniędzy",
+            english: "I don't have money",
+            hint: "Negation first",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["to", "brata", "dom", "jest", "mojego"],
+            correct: "To jest dom mojego brata",
+            english: "This is my brother's house",
+            hint: "This + verb + noun + adjective + noun in genitive",
+          },
+        ],
+        advanced: [
+          {
+            words: ["dzieci", "wszystkich", "nie", "widzę"],
+            correct: "Nie widzę wszystkich dzieci",
+            english: "I don't see all the children",
+            hint: "Negation + verb + adjective + noun (genitive plural)",
+          },
+        ],
+      },
+    },
+    {
+      name: "Accusative",
+      polish: "Biernik",
+      difficulty: "beginner",
+      question: "Kogo? Co?",
+      questionEng: "Whom? What?",
+      usage: "Shows the direct object - what or whom the action is done to.",
+      analogy:
+        "The 'victim' or 'target' of the action - what you're eating, seeing, loving",
+      examples: [
+        { polish: "Widzę kota.", english: "I see the cat.", highlight: "kota" },
+        {
+          polish: "Czytam książkę.",
+          english: "I'm reading a book.",
+          highlight: "książkę",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: 'Mam ___' (I have a dog)",
+            options: ["pies", "psa", "psem", "psowi"],
+            correct: 1,
+            explanation: "Mieć (to have) takes Accusative: psa.",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Complete: 'Słucham ___' (I'm listening to music)",
+            options: ["muzyka", "muzyki", "muzykę", "muzyką"],
+            correct: 2,
+            explanation: "Direct object: muzykę (Accusative).",
+          },
+          {
+            question: "Complete: 'Widzę ___' (I see my brother)",
+            options: ["brat", "brata", "bratem", "bratu"],
+            correct: 1,
+            explanation:
+              "Masculine animate nouns use different Accusative: brata.",
+          },
+        ],
+        advanced: [
+          {
+            question: "Complete: 'Kocham ___' (I love my parents - plural)",
+            options: ["rodzice", "rodziców", "rodzicom", "rodzicami"],
+            correct: 1,
+            explanation: "Accusative plural of masculine personal: rodziców.",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Lubię ___.",
+            correct: "kawę",
+            options: ["kawa", "kawy", "kawę", "kawą"],
+            english: "I like coffee.",
+            hint: "What do you like?",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "Znam ___.",
+            correct: "tego pana",
+            options: ["ten pan", "tego pana", "temu panu", "tym panem"],
+            english: "I know this gentleman.",
+            hint: "Direct object - animate masculine",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "Kupuję ___.",
+            correct: "nowe buty",
+            options: [
+              "nowe buty",
+              "nowych butów",
+              "nowym butom",
+              "nowymi butami",
+            ],
+            english: "I'm buying new shoes.",
+            hint: "Plural accusative",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["piłkę", "Kopię"],
+            correct: "Kopię piłkę",
+            english: "I'm kicking the ball",
+            hint: "Action + what",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["widzę", "sklep", "duży"],
+            correct: "Widzę duży sklep",
+            english: "I see a big store",
+            hint: "Verb + adjective + noun",
+          },
+        ],
+        advanced: [
+          {
+            words: ["Kocham", "moją", "rodzinę", "całą"],
+            correct: "Kocham całą moją rodzinę",
+            english: "I love my whole family",
+            hint: "Verb + adjective + possessive + noun",
+          },
+        ],
+      },
+    },
+    {
+      name: "Dative",
+      polish: "Celownik",
+      difficulty: "intermediate",
+      question: "Komu? Czemu?",
+      questionEng: "To whom? To what?",
+      usage:
+        "Shows the indirect object - the person receiving something or benefiting from an action.",
+      analogy: "Think 'to/for someone' - like giving a gift TO your friend",
+      examples: [
+        {
+          polish: "Daję prezent Markowi.",
+          english: "I'm giving a gift to Mark.",
+          highlight: "Markowi",
+        },
+        { polish: "Pomogę ci.", english: "I'll help you.", highlight: "ci" },
+        {
+          polish: "Kupuję kwiaty mamie.",
+          english: "I'm buying flowers for mom.",
+          highlight: "mamie",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question:
+              "Complete: 'Daję książkę ___' (I'm giving a book to my sister)",
+            options: ["siostra", "siostry", "siostrze", "siostrą"],
+            correct: 2,
+            explanation: "The indirect object (to whom) uses Dative: siostrze.",
+          },
+        ],
+        intermediate: [
+          {
+            question:
+              "Complete: 'Opowiadam historię ___' (I'm telling a story to children)",
+            options: ["dzieci", "dzieciom", "dziecko", "dziećmi"],
+            correct: 1,
+            explanation: "Dzieciom is the Dative plural form.",
+          },
+          {
+            question: "Complete: 'Pomagam ___' (I'm helping my friend)",
+            options: [
+              "przyjaciel",
+              "przyjaciela",
+              "przyjacielowi",
+              "przyjacielem",
+            ],
+            correct: 2,
+            explanation: "Dative for masculine nouns: przyjacielowi.",
+          },
+        ],
+        advanced: [
+          {
+            question: "Complete: 'Wszystkim ___' dziękuję (I thank all guests)",
+            options: ["goście", "gości", "gościom", "gośćmi"],
+            correct: 2,
+            explanation: "Dative plural: gościom (to all guests).",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Pomogę ___.",
+            correct: "tobie",
+            options: ["ty", "tobie", "ciebie", "tobą"],
+            english: "I'll help you.",
+            hint: "To whom will I help?",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "Daj ___ jabłko.",
+            correct: "dziecku",
+            options: ["dziecko", "dziecku", "dziecka", "dzieckiem"],
+            english: "Give the child an apple.",
+            hint: "To whom to give?",
+          },
+          {
+            sentence: "Piszę list ___.",
+            correct: "babci",
+            options: ["babcia", "babci", "babcię", "babcią"],
+            english: "I'm writing a letter to grandma.",
+            hint: "To whom?",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "Dzięki ___ wygraliśmy.",
+            correct: "wam",
+            options: ["wy", "was", "wam", "wami"],
+            english: "Thanks to you (plural) we won.",
+            hint: "Dative plural pronoun",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["kupuję", "mamie", "prezent"],
+            correct: "Kupuję mamie prezent",
+            english: "I'm buying mom a gift",
+            hint: "Verb + to whom + what",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["pomagam", "codziennie", "babci"],
+            correct: "Pomagam babci codziennie",
+            english: "I help grandma every day",
+            hint: "Verb + to whom + when",
+          },
+        ],
+        advanced: [
+          {
+            words: ["dzieciom", "Opowiadam", "bajkę", "moim"],
+            correct: "Opowiadam moim dzieciom bajkę",
+            english: "I'm telling my children a story",
+            hint: "Verb + possessive + to whom + what",
+          },
+        ],
+      },
+    },
+    {
+      name: "Instrumental",
+      polish: "Narzędnik",
+      difficulty: "intermediate",
+      question: "Kim? Czym?",
+      questionEng: "By whom? With what?",
+      usage:
+        "Shows the instrument/tool used, or accompaniment. Also used with professions and 'to be'.",
+      analogy:
+        "Think 'with' or 'by means of' - writing WITH a pen, going WITH a friend",
+      examples: [
+        {
+          polish: "Piszę długopisem.",
+          english: "I'm writing with a pen.",
+          highlight: "długopisem",
+        },
+        {
+          polish: "Idę z przyjacielem.",
+          english: "I'm going with a friend.",
+          highlight: "przyjacielem",
+        },
+        {
+          polish: "On jest lekarzem.",
+          english: "He is a doctor.",
+          highlight: "lekarzem",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: 'Jem zupę ___' (I'm eating soup with a spoon)",
+            options: ["łyżka", "łyżki", "łyżką", "łyżce"],
+            correct: 2,
+            explanation: "Instrument used: łyżką (Instrumental).",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Complete: 'Jestem ___' (I am a student)",
+            options: ["student", "studenta", "studentem", "studentowi"],
+            correct: 2,
+            explanation:
+              "Profession with 'być' (to be) uses Instrumental: studentem.",
+          },
+          {
+            question: "Complete: 'Idę z ___' (I'm going with my sister)",
+            options: ["siostra", "siostry", "siostrze", "siostrą"],
+            correct: 3,
+            explanation: "After 'z' (with), use Instrumental: siostrą.",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Complete: 'Między ___ jest problem (Between the neighbors there is a problem)",
+            options: ["sąsiedzi", "sąsiadów", "sąsiadom", "sąsiadami"],
+            correct: 3,
+            explanation:
+              "Między (between) takes Instrumental plural: sąsiadami.",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Jadę ___.",
+            correct: "samochodem",
+            options: ["samochód", "samochodu", "samochodem", "samochodzie"],
+            english: "I'm going by car.",
+            hint: "By what means?",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "Jestem ___.",
+            correct: "nauczycielem",
+            options: [
+              "nauczyciel",
+              "nauczyciela",
+              "nauczycielem",
+              "nauczycielowi",
+            ],
+            english: "I am a teacher.",
+            hint: "Profession with 'być'",
+          },
+          {
+            sentence: "Idę z ___.",
+            correct: "kolegą",
+            options: ["kolega", "kolegi", "koledze", "kolegą"],
+            english: "I'm going with a colleague.",
+            hint: "With whom?",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "Cieszę się ___.",
+            correct: "sukcesem",
+            options: ["sukces", "sukcesu", "sukcesem", "sukcesie"],
+            english: "I'm happy with the success.",
+            hint: "Cieszyć się takes Instrumental",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["nożem", "Kroję", "chleb"],
+            correct: "Kroję chleb nożem",
+            english: "I'm cutting bread with a knife",
+            hint: "Verb + object + instrument",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["jest", "Ona", "lekarką"],
+            correct: "Ona jest lekarką",
+            english: "She is a doctor",
+            hint: "Subject + verb + profession",
+          },
+        ],
+        advanced: [
+          {
+            words: ["Interesuję", "się", "polityką", "nie"],
+            correct: "Nie interesuję się polityką",
+            english: "I'm not interested in politics",
+            hint: "Negation + reflexive verb + instrumental",
+          },
+        ],
+      },
+    },
+    {
+      name: "Locative",
+      polish: "Miejscownik",
+      difficulty: "intermediate",
+      question: "O kim? O czym? Gdzie?",
+      questionEng: "About whom? About what? Where?",
+      usage:
+        "Shows location or the topic being discussed. Always used with a preposition!",
+      analogy:
+        "Think 'about' or 'in/on/at' a place - talking ABOUT something or being IN a location",
+      examples: [
+        {
+          polish: "Jestem w domu.",
+          english: "I'm at home.",
+          highlight: "domu",
+        },
+        {
+          polish: "Rozmawiamy o filmie.",
+          english: "We're talking about the movie.",
+          highlight: "filmie",
+        },
+        {
+          polish: "Mieszkam w Polsce.",
+          english: "I live in Poland.",
+          highlight: "Polsce",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: 'Jestem w ___' (I'm in the park)",
+            options: ["park", "parku", "parkiem", "parków"],
+            correct: 1,
+            explanation: "After preposition 'w' (in), we use Locative: parku.",
+          },
+        ],
+        intermediate: [
+          {
+            question:
+              "Complete: 'Myślę o ___' (I'm thinking about you - singular, familiar)",
+            options: ["ty", "ciebie", "tobie", "tobą"],
+            correct: 2,
+            explanation: "After 'o' (about), Locative: tobie.",
+          },
+          {
+            question:
+              "Complete: 'Rozmawiamy o ___' (We're talking about the book)",
+            options: ["książka", "książki", "książce", "książką"],
+            correct: 2,
+            explanation: "After 'o' (about), Locative: książce.",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Complete: 'Na ___ są kwiaty (On the tables there are flowers - plural)",
+            options: ["stoły", "stołów", "stołom", "stołach"],
+            correct: 3,
+            explanation: "Na (on) with location uses Locative plural: stołach.",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Jestem w ___.",
+            correct: "szkole",
+            options: ["szkoła", "szkoły", "szkole", "szkołą"],
+            english: "I'm at school.",
+            hint: "Where am I?",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "Rozmawiamy o ___.",
+            correct: "muzyce",
+            options: ["muzyka", "muzyki", "muzyce", "muzyką"],
+            english: "We're talking about music.",
+            hint: "About what?",
+          },
+          {
+            sentence: "Mieszkam w ___.",
+            correct: "mieście",
+            options: ["miasto", "miasta", "mieście", "miastem"],
+            english: "I live in a city.",
+            hint: "Where do I live?",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "Myślę o ___.",
+            correct: "dzieciach",
+            options: ["dzieci", "dzieci", "dzieciom", "dzieciach"],
+            english: "I'm thinking about the children.",
+            hint: "About whom? (plural)",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["w", "Jestem", "parku"],
+            correct: "Jestem w parku",
+            english: "I'm in the park",
+            hint: "Subject + preposition + place",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["o", "książce", "Myślę", "tej"],
+            correct: "Myślę o tej książce",
+            english: "I'm thinking about this book",
+            hint: "Verb + preposition + determiner + noun",
+          },
+        ],
+        advanced: [
+          {
+            words: ["Polsce", "w", "Mieszkam", "pięknej"],
+            correct: "Mieszkam w pięknej Polsce",
+            english: "I live in beautiful Poland",
+            hint: "Verb + preposition + adjective + noun",
+          },
+        ],
+      },
+    },
+    {
+      name: "Vocative",
+      polish: "Wołacz",
+      difficulty: "beginner",
+      question: "O!",
+      questionEng: "Hey!",
+      usage:
+        "Used when addressing or calling someone directly. The 'hey you!' case.",
+      analogy:
+        "Like saying 'Hey, John!' or 'Maria!' when calling someone's name",
+      examples: [
+        {
+          polish: "Marku, chodź tutaj!",
+          english: "Mark, come here!",
+          highlight: "Marku",
+        },
+        {
+          polish: "Kochanie, pomóż mi.",
+          english: "Honey, help me.",
+          highlight: "Kochanie",
+        },
+        {
+          polish: "Panie profesorze!",
+          english: "Mr. Professor!",
+          highlight: "profesorze",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: '___, jak się masz?' (Anna, how are you?)",
+            options: ["Anna", "Anno", "Anny", "Annie"],
+            correct: 1,
+            explanation: "When calling someone: Anno (Vocative).",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Complete: '___, proszę pomóc!' (Mom, please help!)",
+            options: ["Mama", "Mamo", "Mamy", "Mamie"],
+            correct: 1,
+            explanation: "Addressing mother: Mamo (Vocative).",
+          },
+          {
+            question: "Complete: '___, dziękuję!' (Sir, thank you!)",
+            options: ["Pan", "Pana", "Panie", "Panem"],
+            correct: 2,
+            explanation: "Formal address: Panie (Vocative).",
+          },
+        ],
+        advanced: [
+          {
+            question: "Complete: '___, słuchajcie! (Dear children, listen!)",
+            options: [
+              "Drogie dzieci",
+              "Drodzy dzieci",
+              "Drogie dziecko",
+              "Drogich dzieci",
+            ],
+            correct: 0,
+            explanation: "Vocative with adjective: Drogie dzieci.",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "___, chodź tutaj!",
+            correct: "Piotrze",
+            options: ["Piotr", "Piotra", "Piotrze", "Piotrem"],
+            english: "Piotr, come here!",
+            hint: "Calling someone's name",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "___, co robisz?",
+            correct: "Kasiu",
+            options: ["Kasia", "Kasi", "Kasiu", "Kasią"],
+            english: "Kasia, what are you doing?",
+            hint: "Direct address",
+          },
+          {
+            sentence: "___, proszę o ciszę!",
+            correct: "Panowie",
+            options: ["Panowie", "Panów", "Panom", "Panami"],
+            english: "Gentlemen, please be quiet!",
+            hint: "Plural formal address",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "___, witam serdecznie!",
+            correct: "Szanowni państwo",
+            options: [
+              "Szanowni państwo",
+              "Szanownych państwa",
+              "Szanownym państwu",
+              "Szanownymi państwami",
+            ],
+            english: "Ladies and gentlemen, I warmly welcome you!",
+            hint: "Very formal plural address",
+          },
+        ],
+      },
+      sentenceBuilder: {
+        beginner: [
+          {
+            words: ["tutaj", "Marku", "chodź"],
+            correct: "Marku chodź tutaj",
+            english: "Mark, come here",
+            hint: "Name first when calling",
+          },
+        ],
+        intermediate: [
+          {
+            words: ["dzieci", "Słuchajcie", "drogie"],
+            correct: "Drogie dzieci Słuchajcie",
+            english: "Dear children, listen",
+            hint: "Address + noun + verb",
+          },
+        ],
+        advanced: [
+          {
+            words: ["Panie", "proszę", "profesorze", "pomóc"],
+            correct: "Panie profesorze proszę pomóc",
+            english: "Professor, please help",
+            hint: "Title + noun + verb + infinitive",
+          },
+        ],
+      },
+    },
+  ];
+
+  const declensionTables = [
+    {
+      title: "Masculine Animate (kot - cat)",
+      rows: [
+        { case: "Nominative", singular: "kot", plural: "koty" },
+        { case: "Genitive", singular: "kota", plural: "kotów" },
+        { case: "Dative", singular: "kotu", plural: "kotom" },
+        { case: "Accusative", singular: "kota", plural: "koty" },
+        { case: "Instrumental", singular: "kotem", plural: "kotami" },
+        { case: "Locative", singular: "kocie", plural: "kotach" },
+        { case: "Vocative", singular: "kocie", plural: "koty" },
+      ],
+    },
+    {
+      title: "Masculine Inanimate (dom - house)",
+      rows: [
+        { case: "Nominative", singular: "dom", plural: "domy" },
+        { case: "Genitive", singular: "domu", plural: "domów" },
+        { case: "Dative", singular: "domowi", plural: "domom" },
+        { case: "Accusative", singular: "dom", plural: "domy" },
+        { case: "Instrumental", singular: "domem", plural: "domami" },
+        { case: "Locative", singular: "domu", plural: "domach" },
+        { case: "Vocative", singular: "domu", plural: "domy" },
+      ],
+    },
+    {
+      title: "Feminine (książka - book)",
+      rows: [
+        { case: "Nominative", singular: "książka", plural: "książki" },
+        { case: "Genitive", singular: "książki", plural: "książek" },
+        { case: "Dative", singular: "książce", plural: "książkom" },
+        { case: "Accusative", singular: "książkę", plural: "książki" },
+        { case: "Instrumental", singular: "książką", plural: "książkami" },
+        { case: "Locative", singular: "książce", plural: "książkach" },
+        { case: "Vocative", singular: "książko", plural: "książki" },
+      ],
+    },
+    {
+      title: "Neuter (okno - window)",
+      rows: [
+        { case: "Nominative", singular: "okno", plural: "okna" },
+        { case: "Genitive", singular: "okna", plural: "okien" },
+        { case: "Dative", singular: "oknu", plural: "oknom" },
+        { case: "Accusative", singular: "okno", plural: "okna" },
+        { case: "Instrumental", singular: "oknem", plural: "oknami" },
+        { case: "Locative", singular: "oknie", plural: "oknach" },
+        { case: "Vocative", singular: "okno", plural: "okna" },
+      ],
+    },
+  ];
+
+  const verbs = [
+    {
+      name: "Verb Aspects",
+      topic: "Perfective vs Imperfective",
+      difficulty: "intermediate",
+      icon: "⚡",
+      explanation:
+        "Polish verbs come in PAIRS - most verbs have two forms called aspects. This is one of the trickiest parts of Polish!",
+      analogy:
+        "Think of it like a movie: Imperfective = watching the whole movie (ongoing action). Perfective = just the ending scene (completed action).",
+      aspectPairs: [
+        { imperfective: "robić", perfective: "zrobić", english: "to do/make" },
+        { imperfective: "pisać", perfective: "napisać", english: "to write" },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question:
+              "Which verb do you use? 'Yesterday I ___ a letter (and finished it)'",
+            options: ["pisałem (imperfective)", "napisałem (perfective)"],
+            correct: 1,
+            explanation:
+              "Use perfective 'napisałem' because the action was completed.",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Which verb? 'I ___ books every day (regularly)'",
+            options: ["czytam (imperfective)", "przeczytam (perfective)"],
+            correct: 0,
+            explanation: "Use imperfective 'czytam' for repeated actions.",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Which verb? 'Tomorrow I will ___ the whole book (complete it)'",
+            options: ["będę czytać (imperfective)", "przeczytam (perfective)"],
+            correct: 1,
+            explanation:
+              "Use perfective 'przeczytam' for completed future action.",
+          },
+        ],
+      },
+    },
+    {
+      name: "Present Tense",
+      topic: "Present Tense Conjugation",
+      difficulty: "beginner",
+      icon: "🕐",
+      explanation:
+        "Present tense in Polish is used for actions happening NOW. Only imperfective verbs have present tense!",
+      analogy:
+        "Like taking a photo of what's happening right now - the action is in progress.",
+      conjugationTable: {
+        verb: "robić (to do/make - imperfective)",
+        forms: [
+          { pronoun: "ja", form: "robię", english: "I do/am doing" },
+          { pronoun: "ty", form: "robisz", english: "you do/are doing" },
+          { pronoun: "on/ona/ono", form: "robi", english: "he/she/it does" },
+          { pronoun: "my", form: "robimy", english: "we do/are doing" },
+          { pronoun: "wy", form: "robicie", english: "you (plural) do" },
+          { pronoun: "oni/one", form: "robią", english: "they do/are doing" },
+        ],
+      },
+      patterns: [
+        {
+          name: "-ać verbs (like czytać)",
+          example:
+            "czytać → czytam, czytasz, czyta, czytamy, czytacie, czytają",
+        },
+        {
+          name: "-ić/-yć verbs (like mówić)",
+          example: "mówić → mówię, mówisz, mówi, mówimy, mówicie, mówią",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Conjugate 'pisać' (to write) for 'ja' (I)",
+            options: ["piszę", "pisam", "pisze", "piszą"],
+            correct: 0,
+            explanation: "ja piszę - I write/am writing",
+          },
+          {
+            question: "Conjugate 'czytać' (to read) for 'ty' (you)",
+            options: ["czytam", "czytasz", "czyta", "czytają"],
+            correct: 1,
+            explanation: "ty czytasz - you read/are reading",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Conjugate 'robić' (to do) for 'oni' (they)",
+            options: ["robi", "robią", "robimy", "robicie"],
+            correct: 1,
+            explanation: "oni robią - they do/are doing",
+          },
+          {
+            question: "Conjugate 'mówić' (to speak) for 'my' (we)",
+            options: ["mówię", "mówisz", "mówimy", "mówią"],
+            correct: 2,
+            explanation: "my mówimy - we speak/are speaking",
+          },
+        ],
+        advanced: [
+          {
+            question: "Conjugate 'jeść' (to eat - irregular) for 'ja' (I)",
+            options: ["jem", "jesz", "jedzę", "jedziem"],
+            correct: 0,
+            explanation: "jeść is irregular: ja jem (I eat)",
+          },
+        ],
+      },
+    },
+    {
+      name: "Past Tense",
+      topic: "Past Tense Conjugation",
+      difficulty: "intermediate",
+      icon: "⏮️",
+      explanation:
+        "Past tense in Polish agrees with gender! Male, female, and neuter forms are different. Both aspects can be used.",
+      analogy:
+        "Like looking at old photos - the action already happened. But you choose the aspect based on whether it was completed or ongoing.",
+      conjugationTable: {
+        verb: "zrobić (to do/make - perfective)",
+        forms: [
+          { pronoun: "ja (m)", form: "zrobiłem", english: "I did (male)" },
+          { pronoun: "ja (f)", form: "zrobiłam", english: "I did (female)" },
+          { pronoun: "ty (m)", form: "zrobiłeś", english: "you did (male)" },
+          { pronoun: "ty (f)", form: "zrobiłaś", english: "you did (female)" },
+          { pronoun: "on", form: "zrobił", english: "he did" },
+          { pronoun: "ona", form: "zrobiła", english: "she did" },
+          { pronoun: "ono", form: "zrobiło", english: "it did" },
+          {
+            pronoun: "my (m)",
+            form: "zrobiliśmy",
+            english: "we did (male group)",
+          },
+          {
+            pronoun: "my (f)",
+            form: "zrobiłyśmy",
+            english: "we did (female group)",
+          },
+          { pronoun: "oni", form: "zrobili", english: "they did (male/mixed)" },
+          { pronoun: "one", form: "zrobiły", english: "they did (female)" },
+        ],
+      },
+      genderNote:
+        "IMPORTANT: The ending changes based on who is doing the action! -łem/-łam for 'I', -łeś/-łaś for 'you', etc.",
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: 'Ja (male) ___ zadanie.' (I did the homework)",
+            options: ["zrobiłem", "zrobiłam", "zrobił", "zrobiła"],
+            correct: 0,
+            explanation: "Male speaker uses -łem: zrobiłem",
+          },
+          {
+            question: "Complete: 'Ona ___ obiad.' (She cooked dinner)",
+            options: ["gotował", "gotowała", "gotowali", "gotowały"],
+            correct: 1,
+            explanation: "Feminine singular: gotowała (she cooked)",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Complete: 'Oni ___ film.' (They watched a movie)",
+            options: ["oglądał", "oglądała", "oglądali", "oglądały"],
+            correct: 2,
+            explanation: "Masculine/mixed group uses -li: oglądali",
+          },
+          {
+            question:
+              "Complete: 'Ty (female) ___ książkę?' (Did you read the book?)",
+            options: [
+              "przeczytałem",
+              "przeczytałeś",
+              "przeczytałam",
+              "przeczytałaś",
+            ],
+            correct: 3,
+            explanation: "Female 'you' (ty) uses -łaś: przeczytałaś",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Complete: 'My (all female) ___ do kina.' (We went to the cinema)",
+            options: ["poszliśmy", "poszłyśmy", "poszli", "poszły"],
+            correct: 1,
+            explanation: "All-female 'we' uses -łyśmy: poszłyśmy",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Wczoraj ja (m) ___ film.",
+            correct: "oglądałem",
+            options: ["oglądałem", "oglądałam", "oglądał", "oglądała"],
+            verb: "oglądać (to watch)",
+            english: "Yesterday I (male) watched a movie.",
+            pronoun: "ja (I - male)",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "Ona ___ list.",
+            correct: "napisała",
+            options: ["napisał", "napisała", "napisałem", "napisałam"],
+            verb: "napisać (to write - perfective)",
+            english: "She wrote a letter.",
+            pronoun: "ona (she)",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "One (women) ___ w parku.",
+            correct: "biegały",
+            options: ["biegał", "biegali", "biegała", "biegały"],
+            verb: "biegać (to run)",
+            english: "They (women) were running in the park.",
+            pronoun: "one (they - female)",
+          },
+        ],
+      },
+    },
+    {
+      name: "Future Tense",
+      topic: "Future Tense Formation",
+      difficulty: "intermediate",
+      icon: "⏭️",
+      explanation:
+        "Future tense has TWO ways to form it! Perfective verbs form future simply. Imperfective verbs need a helper verb.",
+      analogy:
+        "Like planning ahead - perfective is 'I will do it (and finish)', imperfective is 'I will be doing it (ongoing)'.",
+      details: [
+        {
+          title: "Perfective Future (Simple)",
+          description:
+            "Just conjugate the perfective verb - it automatically means future!",
+          examples: [
+            "Przeczytam książkę. (I will read the book)",
+            "Napiszę list. (I will write a letter)",
+            "Kupię chleb. (I will buy bread)",
+          ],
+        },
+        {
+          title: "Imperfective Future (Compound)",
+          description: "Use 'będę' (will be) + infinitive OR past form",
+          examples: [
+            "Będę czytać książkę. (I will be reading a book)",
+            "Będę pisał/pisała listy. (I will be writing letters)",
+            "Będziemy robić zakupy. (We will be shopping)",
+          ],
+        },
+      ],
+      conjugationTable: {
+        helper: "być (to be) - future forms",
+        forms: [
+          { pronoun: "ja", form: "będę", english: "I will be" },
+          { pronoun: "ty", form: "będziesz", english: "you will be" },
+          {
+            pronoun: "on/ona/ono",
+            form: "będzie",
+            english: "he/she/it will be",
+          },
+          { pronoun: "my", form: "będziemy", english: "we will be" },
+          { pronoun: "wy", form: "będziecie", english: "you (plural) will be" },
+          { pronoun: "oni/one", form: "będą", english: "they will be" },
+        ],
+      },
+      quiz: {
+        beginner: [
+          {
+            question: "Future: 'I will read the book (and finish it)'",
+            options: ["będę czytać", "przeczytam", "czytam", "czytałem"],
+            correct: 1,
+            explanation:
+              "Use perfective 'przeczytam' for completed future action.",
+          },
+          {
+            question:
+              "Which form is correct? 'Jutro ___ do sklepu' (Tomorrow I will go to the store)",
+            options: ["idę", "pójdę", "będę iść", "szedłem"],
+            correct: 1,
+            explanation: "Perfective future: pójdę (I will go - and arrive)",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Future: 'Tomorrow I will be studying (all day)'",
+            options: [
+              "nauczę się",
+              "będę się uczyć",
+              "uczę się",
+              "uczyłem się",
+            ],
+            correct: 1,
+            explanation:
+              "Use imperfective 'będę się uczyć' for ongoing future action.",
+          },
+          {
+            question:
+              "Complete: 'Wieczorem oni ___ telewizję' (In the evening they will watch TV)",
+            options: ["oglądają", "będą oglądać", "obejrzą", "oglądali"],
+            correct: 1,
+            explanation: "Imperfective future: będą oglądać (will be watching)",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Which is correct? 'Za rok ___ nowy dom' (In a year we will build a new house - completed)",
+            options: [
+              "budujemy",
+              "będziemy budować",
+              "zbudujemy",
+              "budowaliśmy",
+            ],
+            correct: 2,
+            explanation: "Perfective future for completed action: zbudujemy",
+          },
+        ],
+      },
+      fillBlanks: {
+        beginner: [
+          {
+            sentence: "Jutro ja ___ zakupy.",
+            correct: "zrobię",
+            options: ["robię", "zrobię", "będę robić", "robiłem"],
+            verb: "zrobić (to do - perfective)",
+            english: "Tomorrow I will do shopping (and finish).",
+            aspect: "perfective",
+          },
+        ],
+        intermediate: [
+          {
+            sentence: "Wieczorem my ___ film.",
+            correct: "będziemy oglądać",
+            options: [
+              "oglądamy",
+              "obejrzymy",
+              "będziemy oglądać",
+              "oglądaliśmy",
+            ],
+            verb: "oglądać (to watch - imperfective)",
+            english: "In the evening we will be watching a movie.",
+            aspect: "imperfective",
+          },
+        ],
+        advanced: [
+          {
+            sentence: "W przyszłym roku oni ___ do Francji.",
+            correct: "pojadą",
+            options: ["jadą", "pojadą", "będą jechać", "jechali"],
+            verb: "pojechać (to go - perfective)",
+            english: "Next year they will go to France.",
+            aspect: "perfective",
+          },
+        ],
+      },
+    },
+    {
+      name: "Common Verbs",
+      topic: "Most Used Polish Verbs",
+      difficulty: "beginner",
+      icon: "⭐",
+      explanation:
+        "Master these essential verbs and you'll be able to have basic conversations!",
+      analogy:
+        "These are like the 'greatest hits' - the verbs you'll use every single day.",
+      commonVerbs: [
+        {
+          imperfective: "być",
+          perfective: "—",
+          english: "to be",
+          present: "jestem, jesteś, jest, jesteśmy, jesteście, są",
+          note: "Most important verb! Irregular.",
+        },
+        {
+          imperfective: "mieć",
+          perfective: "—",
+          english: "to have",
+          present: "mam, masz, ma, mamy, macie, mają",
+          note: "Essential for possession",
+        },
+        {
+          imperfective: "móc",
+          perfective: "—",
+          english: "can/to be able",
+          present: "mogę, możesz, może, możemy, możecie, mogą",
+          note: "Modal verb for ability",
+        },
+        {
+          imperfective: "chcieć",
+          perfective: "—",
+          english: "to want",
+          present: "chcę, chcesz, chce, chcemy, chcecie, chcą",
+          note: "Express desires",
+        },
+        {
+          imperfective: "wiedzieć",
+          perfective: "dowiedzieć się",
+          english: "to know (facts)",
+          present: "wiem, wiesz, wie, wiemy, wiecie, wiedzą",
+          note: "For factual knowledge",
+        },
+        {
+          imperfective: "znać",
+          perfective: "poznać",
+          english: "to know (people/places)",
+          present: "znam, znasz, zna, znamy, znacie, znają",
+          note: "For familiarity",
+        },
+        {
+          imperfective: "iść",
+          perfective: "pójść",
+          english: "to go (on foot)",
+          present: "idę, idziesz, idzie, idziemy, idziecie, idą",
+          note: "Very irregular!",
+        },
+        {
+          imperfective: "jechać",
+          perfective: "pojechać",
+          english: "to go (by vehicle)",
+          present: "jadę, jedziesz, jedzie, jedziemy, jedziecie, jadą",
+          note: "For transport",
+        },
+      ],
+      quiz: {
+        beginner: [
+          {
+            question: "Complete: 'Ja ___ student.' (I am a student)",
+            options: ["mam", "jestem", "będę", "mogę"],
+            correct: 1,
+            explanation: "Use 'jestem' (I am) from the verb 'być'.",
+          },
+          {
+            question: "Complete: 'Czy ty ___ psa?' (Do you have a dog?)",
+            options: ["jesteś", "masz", "możesz", "chcesz"],
+            correct: 1,
+            explanation: "Use 'masz' (you have) from the verb 'mieć'.",
+          },
+        ],
+        intermediate: [
+          {
+            question: "Complete: 'Czy ty ___ po polsku?' (Do you know Polish?)",
+            options: ["wiesz", "znasz", "umiesz", "możesz"],
+            correct: 1,
+            explanation: "Use 'znasz' for knowing a language (familiarity).",
+          },
+          {
+            question: "Complete: 'Nie ___ dziś przyjść' (I can't come today)",
+            options: ["chcę", "mogę", "muszę", "wiem"],
+            correct: 1,
+            explanation: "Use 'mogę' (I can) - negative: nie mogę (I can't)",
+          },
+        ],
+        advanced: [
+          {
+            question:
+              "Complete: 'Oni już ___ do domu' (They are already going home - on foot)",
+            options: ["jadą", "idą", "chodzą", "biegną"],
+            correct: 1,
+            explanation:
+              "Use 'idą' (they are going) from 'iść' for going on foot.",
+          },
+        ],
+      },
+    },
+  ];
+
+  // Calculate spaced repetition intervals
+  const getNextReviewDate = (topicId, performance) => {
+    const now = new Date();
+    const intervals = {
+      poor: 1, // 1 day
+      good: 3, // 3 days
+      excellent: 7, // 7 days
+    };
+
+    const currentReview = reviewSchedule[topicId] || {
+      interval: 1,
+      lastReview: now,
+    };
+    let newInterval = intervals[performance];
+
+    if (performance === "excellent" && currentReview.interval >= 7) {
+      newInterval = currentReview.interval * 2; // Double interval for mastered topics
+    }
+
+    const nextDate = new Date(now);
+    nextDate.setDate(nextDate.getDate() + newInterval);
+
+    return { interval: newInterval, lastReview: now, nextReview: nextDate };
+  };
+
+  // Update progress after quiz completion
+  const updateProgress = (topicType, topicIndex, score, total) => {
+    const percentage = (score / total) * 100;
+    const topicId = `${topicType}-${topicIndex}`;
+
+    setProgress((prev) => {
+      const newProgress = { ...prev };
+
+      // Update topic-specific progress
+      if (!newProgress[topicType][topicIndex]) {
+        newProgress[topicType][topicIndex] = {
+          attempts: 0,
+          totalScore: 0,
+          bestScore: 0,
+          lastAttempt: new Date(),
+        };
+      }
+
+      const topicProgress = newProgress[topicType][topicIndex];
+      topicProgress.attempts += 1;
+      topicProgress.totalScore += score;
+      topicProgress.bestScore = Math.max(topicProgress.bestScore, percentage);
+      topicProgress.lastAttempt = new Date();
+
+      // Update overall stats
+      newProgress.totalScore += score;
+      newProgress.totalAttempts += total;
+      newProgress.lastStudyDate = new Date().toDateString();
+
+      // Identify weak areas (< 70%)
+      if (percentage < 70) {
+        const topicName =
+          topicType === "cases"
+            ? cases[topicIndex].name
+            : verbs[topicIndex].name;
+        if (!newProgress.weakAreas.includes(topicName)) {
+          newProgress.weakAreas.push(topicName);
+        }
+      } else {
+        // Remove from weak areas if improved
+        const topicName =
+          topicType === "cases"
+            ? cases[topicIndex].name
+            : verbs[topicIndex].name;
+        newProgress.weakAreas = newProgress.weakAreas.filter(
+          (area) => area !== topicName
+        );
+      }
+
+      // Mark as mastered (>= 90% on 3+ attempts)
+      if (percentage >= 90 && topicProgress.attempts >= 3) {
+        const topicName =
+          topicType === "cases"
+            ? cases[topicIndex].name
+            : verbs[topicIndex].name;
+        if (!newProgress.masteredTopics.includes(topicName)) {
+          newProgress.masteredTopics.push(topicName);
+        }
+      }
+
+      return newProgress;
+    });
+
+    // Update spaced repetition schedule
+    const performance =
+      percentage >= 90 ? "excellent" : percentage >= 70 ? "good" : "poor";
+    setReviewSchedule((prev) => ({
+      ...prev,
+      [topicId]: getNextReviewDate(topicId, performance),
+    }));
+  };
+
+  // Get topics due for review
+  const getTopicsDueForReview = () => {
+    const now = new Date();
+    const dueTopics = [];
+
+    Object.keys(reviewSchedule).forEach((topicId) => {
+      const review = reviewSchedule[topicId];
+      if (new Date(review.nextReview) <= now) {
+        dueTopics.push(topicId);
+      }
+    });
+
+    return dueTopics;
+  };
+
+  // Get recommended next topic
+  const getRecommendedTopic = () => {
+    // Priority: weak areas > due for review > new topics > random
+    if (progress.weakAreas.length > 0) {
+      return { type: "weak", topic: progress.weakAreas[0] };
+    }
+
+    const dueTopics = getTopicsDueForReview();
+    if (dueTopics.length > 0) {
+      return { type: "review", topicId: dueTopics[0] };
+    }
+
+    // Find topics not yet attempted
+    const allTopics = [...cases, ...verbs];
+    for (let i = 0; i < cases.length; i++) {
+      if (!progress.cases[i]) {
+        return { type: "new", section: "cases", index: i };
+      }
+    }
+
+    for (let i = 0; i < verbs.length; i++) {
+      if (!progress.verbs[i]) {
+        return { type: "new", section: "verbs", index: i };
+      }
+    }
+
+    return { type: "random", section: "cases", index: 0 };
+  };
+
+  // Export progress
+  const exportProgress = () => {
+    const data = JSON.stringify(
+      { progress, reviewSchedule, difficulty },
+      null,
+      2
+    );
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `polish-grammar-progress-${
+      new Date().toISOString().split("T")[0]
+    }.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Import progress
+  const importProgress = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.progress) setProgress(data.progress);
+          if (data.reviewSchedule) setReviewSchedule(data.reviewSchedule);
+          if (data.difficulty) setDifficulty(data.difficulty);
+          alert("Progress imported successfully!");
+        } catch (error) {
+          alert("Error importing progress. Please check the file format.");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleSubmit = () => {
+    let correctCount = 0;
+    let totalQuestions = 0;
+
+    if (section === "cases") {
+      const currentCaseData = cases[currentCase];
+
+      if (mode === "quiz") {
+        const quizData = currentCaseData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentCaseData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (fillBlankAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "sentence") {
+        const sentenceData = currentCaseData.sentenceBuilder[difficulty] || [];
+        totalQuestions = sentenceData.length;
+        sentenceData.forEach((q, index) => {
+          const userAnswer = (sentenceAnswers[index] || []).join(" ");
+          if (userAnswer === q.correct) correctCount++;
+        });
+      }
+
+      updateProgress("cases", currentCase, correctCount, totalQuestions);
+    } else if (section === "verbs") {
+      const currentVerbData = verbs[currentVerb];
+      const quizData = currentVerbData.quiz[difficulty] || [];
+      totalQuestions = quizData.length;
+
+      if (mode === "quiz") {
+        quizData.forEach((q, index) => {
+          if (quizAnswers[index] === q.correct) correctCount++;
+        });
+      }
+
+      updateProgress("verbs", currentVerb, correctCount, totalQuestions);
+    }
+
+    setScore(correctCount);
+    setShowResults(true);
+  };
+
+  const handleReset = () => {
+    setQuizAnswers({});
+    setFillBlankAnswers({});
+    setSentenceAnswers({});
+    setShowResults(false);
+  };
+
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    handleReset();
+  };
+
+  const handleSectionChange = (newSection) => {
+    setSection(newSection);
+    setMode("learn");
+    handleReset();
+  };
+
+  const currentCaseData = section === "cases" ? cases[currentCase] : null;
+  const currentVerbData = section === "verbs" ? verbs[currentVerb] : null;
+
+  const overallAccuracy =
+    progress.totalAttempts > 0
+      ? Math.round((progress.totalScore / progress.totalAttempts) * 100)
+      : 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Book className="w-8 h-8 text-indigo-600" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">
+                  Polish Grammar Master
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Your Complete Learning System 🎓
+                </p>
+              </div>
+            </div>
+
+            {/* Streak Counter */}
+            <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-4 py-2 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5" />
+                <div>
+                  <p className="text-xs">Study Streak</p>
+                  <p className="text-xl font-bold">{progress.streak} days</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section Selector */}
+          <div className="flex gap-3 mb-4">
+            <button
+              onClick={() => handleSectionChange("dashboard")}
+              className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
+                section === "dashboard"
+                  ? "bg-gradient-to-r from-green-500 to-teal-500 text-white shadow-lg"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}>
+              📊 Dashboard
+            </button>
+            <button
+              onClick={() => handleSectionChange("cases")}
+              className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
+                section === "cases"
+                  ? "bg-indigo-600 text-white shadow-lg"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}>
+              📚 Cases
+            </button>
+            <button
+              onClick={() => handleSectionChange("verbs")}
+              className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
+                section === "verbs"
+                  ? "bg-purple-600 text-white shadow-lg"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}>
+              ⚡ Verbs
+            </button>
+          </div>
+
+          {/* Difficulty Selector */}
+          {section !== "dashboard" && (
+            <div className="flex gap-2 items-center mb-4">
+              <span className="text-sm font-medium text-gray-700">
+                Difficulty:
+              </span>
+              <button
+                onClick={() => setDifficulty("beginner")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  difficulty === "beginner"
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}>
+                🌱 Beginner
+              </button>
+              <button
+                onClick={() => setDifficulty("intermediate")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  difficulty === "intermediate"
+                    ? "bg-yellow-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}>
+                🔥 Intermediate
+              </button>
+              <button
+                onClick={() => setDifficulty("advanced")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  difficulty === "advanced"
+                    ? "bg-red-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}>
+                💎 Advanced
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Dashboard */}
+        {section === "dashboard" && (
+          <div className="space-y-6">
+            {/* Overall Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                  <h3 className="font-bold text-gray-800">Overall Accuracy</h3>
+                </div>
+                <p className="text-4xl font-bold text-green-600">
+                  {overallAccuracy}%
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {progress.totalScore} / {progress.totalAttempts} questions
+                  correct
+                </p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Target className="w-6 h-6 text-blue-600" />
+                  <h3 className="font-bold text-gray-800">Topics Mastered</h3>
+                </div>
+                <p className="text-4xl font-bold text-blue-600">
+                  {progress.masteredTopics.length}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {progress.masteredTopics.length > 0
+                    ? progress.masteredTopics.join(", ")
+                    : "Keep practicing!"}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                  <h3 className="font-bold text-gray-800">Review Due</h3>
+                </div>
+                <p className="text-4xl font-bold text-purple-600">
+                  {getTopicsDueForReview().length}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Topics to review today
+                </p>
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="font-bold text-gray-800 text-xl mb-4 flex items-center gap-2">
+                <Star className="w-6 h-6 text-yellow-500" />
+                What to Study Next
+              </h3>
+
+              {(() => {
+                const recommendation = getRecommendedTopic();
+                return (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-300">
+                    {recommendation.type === "weak" && (
+                      <>
+                        <p className="font-bold text-gray-800 mb-2">
+                          💪 Focus on Weak Area:
+                        </p>
+                        <p className="text-lg text-gray-700">
+                          Practice{" "}
+                          <span className="font-bold text-blue-600">
+                            {recommendation.topic}
+                          </span>{" "}
+                          - you scored below 70% here.
+                        </p>
+                      </>
+                    )}
+                    {recommendation.type === "review" && (
+                      <>
+                        <p className="font-bold text-gray-800 mb-2">
+                          🔄 Time for Review:
+                        </p>
+                        <p className="text-lg text-gray-700">
+                          Review topics based on spaced repetition schedule.
+                        </p>
+                      </>
+                    )}
+                    {recommendation.type === "new" && (
+                      <>
+                        <p className="font-bold text-gray-800 mb-2">
+                          ✨ Learn Something New:
+                        </p>
+                        <p className="text-lg text-gray-700">
+                          Start with{" "}
+                          <span className="font-bold text-blue-600">
+                            {recommendation.section === "cases"
+                              ? cases[recommendation.index].name
+                              : verbs[recommendation.index].name}
+                          </span>
+                        </p>
+                      </>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (recommendation.section) {
+                          handleSectionChange(recommendation.section);
+                          if (recommendation.section === "cases")
+                            setCurrentCase(recommendation.index);
+                          else setCurrentVerb(recommendation.index);
+                        }
+                      }}
+                      className="mt-3 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                      Start Learning →
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Weak Areas */}
+            {progress.weakAreas.length > 0 && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="font-bold text-gray-800 text-xl mb-4 flex items-center gap-2">
+                  <Target className="w-6 h-6 text-red-500" />
+                  Areas to Improve
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {progress.weakAreas.map((area, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium">
+                      {area}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Progress by Topic */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="font-bold text-gray-800 text-xl mb-4">
+                Progress by Topic
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-bold text-gray-700 mb-2">Cases</h4>
+                  {cases.map((caseItem, index) => {
+                    const caseProgress = progress.cases[index];
+                    const accuracy = caseProgress
+                      ? Math.round(
+                          (caseProgress.totalScore /
+                            (caseProgress.attempts * 2)) *
+                            100
+                        )
+                      : 0;
+
+                    return (
+                      <div key={index} className="mb-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-medium text-gray-700">
+                            {caseItem.name}
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {caseProgress
+                              ? `${accuracy}% (${caseProgress.attempts} attempts)`
+                              : "Not started"}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              accuracy >= 90
+                                ? "bg-green-500"
+                                : accuracy >= 70
+                                ? "bg-yellow-500"
+                                : accuracy > 0
+                                ? "bg-red-500"
+                                : "bg-gray-300"
+                            }`}
+                            style={{ width: `${accuracy}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-gray-700 mb-2">Verbs</h4>
+                  {verbs.map((verb, index) => {
+                    const verbProgress = progress.verbs[index];
+                    const accuracy = verbProgress
+                      ? Math.round(
+                          (verbProgress.totalScore /
+                            (verbProgress.attempts * 2)) *
+                            100
+                        )
+                      : 0;
+
+                    return (
+                      <div key={index} className="mb-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-medium text-gray-700">
+                            {verb.icon} {verb.name}
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {verbProgress
+                              ? `${accuracy}% (${verbProgress.attempts} attempts)`
+                              : "Not started"}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              accuracy >= 90
+                                ? "bg-green-500"
+                                : accuracy >= 70
+                                ? "bg-yellow-500"
+                                : accuracy > 0
+                                ? "bg-red-500"
+                                : "bg-gray-300"
+                            }`}
+                            style={{ width: `${accuracy}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Data Management */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="font-bold text-gray-800 text-xl mb-4">
+                Manage Your Progress
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                ⚠️ Your progress is stored in your browser's memory. Export your
+                data to save it permanently!
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={exportProgress}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                  <Download className="w-5 h-5" />
+                  Export Progress
+                </button>
+                <label className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-colors cursor-pointer">
+                  <Upload className="w-5 h-5" />
+                  Import Progress
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={importProgress}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cases Section */}
+        {section === "cases" && currentCaseData && (
+          <CasesSection
+            cases={cases}
+            currentCase={currentCase}
+            setCurrentCase={setCurrentCase}
+            currentCaseData={currentCaseData}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quizAnswers}
+            fillBlankAnswers={fillBlankAnswers}
+            sentenceAnswers={sentenceAnswers}
+            showResults={showResults}
+            score={score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={setQuizAnswers}
+            setFillBlankAnswers={setFillBlankAnswers}
+            setSentenceAnswers={setSentenceAnswers}
+            declensionTables={declensionTables}
+          />
+        )}
+
+        {/* Verbs Section */}
+        {section === "verbs" && currentVerbData && (
+          <VerbsSection
+            verbs={verbs}
+            currentVerb={currentVerb}
+            setCurrentVerb={setCurrentVerb}
+            currentVerbData={currentVerbData}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quizAnswers}
+            showResults={showResults}
+            score={score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={setQuizAnswers}
+          />
+        )}
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-gray-600">
+          <p className="text-sm font-bold">
+            Phase 4: Complete Learning System with Progress Tracking ✨
+          </p>
+          <p className="text-xs mt-2">
+            Your progress is tracked! Study daily to maintain your streak 🔥
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Cases Section Component
+const CasesSection = ({
+  cases,
+  currentCase,
+  setCurrentCase,
+  currentCaseData,
+  mode,
+  difficulty,
+  quizAnswers,
+  fillBlankAnswers,
+  showResults,
+  score,
+  handleModeChange,
+  handleReset,
+  handleSubmit,
+  setQuizAnswers,
+  setFillBlankAnswers,
+  sentenceAnswers,
+  setSentenceAnswers,
+  declensionTables,
+}) => {
+  const quizData = currentCaseData.quiz[difficulty] || [];
+  const fillData = currentCaseData.fillBlanks[difficulty] || [];
+  const sentenceData = currentCaseData.sentenceBuilder[difficulty] || [];
+  const totalQuestions =
+    mode === "quiz"
+      ? quizData.length
+      : mode === "fillblank"
+      ? fillData.length
+      : mode === "sentence"
+      ? sentenceData.length
+      : 0;
+
+  const handleSentenceWordClick = (questionIndex, word) => {
+    if (showResults) return;
+    const current = sentenceAnswers[questionIndex] || [];
+    const newAnswer = [...current, word];
+    setSentenceAnswers({ ...sentenceAnswers, [questionIndex]: newAnswer });
+  };
+
+  const handleSentenceRemoveWord = (questionIndex, index) => {
+    if (showResults) return;
+    const current = sentenceAnswers[questionIndex] || [];
+    const newAnswer = current.filter((_, i) => i !== index);
+    setSentenceAnswers({ ...sentenceAnswers, [questionIndex]: newAnswer });
+  };
+
+  return (
+    <div>
+      {/* Navigation */}
+      <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
+        <div className="flex gap-2 flex-wrap mb-4">
+          {cases.map((c, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setCurrentCase(index);
+                handleReset();
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                index === currentCase
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}>
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => handleModeChange("learn")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "learn"
+                ? "bg-green-600 text-white"
+                : "bg-green-100 text-green-700"
+            }`}>
+            Learn
+          </button>
+          <button
+            onClick={() => handleModeChange("quiz")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "quiz"
+                ? "bg-purple-600 text-white"
+                : "bg-purple-100 text-purple-700"
+            }`}>
+            Quiz
+          </button>
+          <button
+            onClick={() => handleModeChange("fillblank")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "fillblank"
+                ? "bg-orange-600 text-white"
+                : "bg-orange-100 text-orange-700"
+            }`}>
+            Practice
+          </button>
+          <button
+            onClick={() => handleModeChange("sentence")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "sentence"
+                ? "bg-blue-600 text-white"
+                : "bg-blue-100 text-blue-700"
+            }`}>
+            Build Sentence
+          </button>
+          <button
+            onClick={() => handleModeChange("declension")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "declension"
+                ? "bg-teal-600 text-white"
+                : "bg-teal-100 text-teal-700"
+            }`}>
+            Tables
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      {mode === "learn" && (
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-3xl font-bold text-indigo-600 mb-2">
+            {currentCaseData.name} ({currentCaseData.polish})
+          </h2>
+          <p className="text-xl text-gray-600 mb-6">
+            {currentCaseData.question} • {currentCaseData.questionEng}
+          </p>
+
+          <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
+            <h3 className="font-bold text-gray-800 mb-2">📚 When to use:</h3>
+            <p className="text-gray-700">{currentCaseData.usage}</p>
+          </div>
+
+          <div className="mb-6 p-4 bg-green-50 rounded-lg">
+            <h3 className="font-bold text-gray-800 mb-2">
+              💡 Think of it like:
+            </h3>
+            <p className="text-gray-700">{currentCaseData.analogy}</p>
+          </div>
+
+          <div className="mb-8">
+            <h3 className="font-bold text-gray-800 mb-4 text-xl">Examples:</h3>
+            <div className="space-y-4">
+              {currentCaseData.examples.map((example, index) => (
+                <div
+                  key={index}
+                  className="p-4 bg-gray-50 rounded-lg border-l-4 border-indigo-400">
+                  <p className="text-lg font-medium text-gray-800 mb-1">
+                    {example.polish
+                      .split(example.highlight)
+                      .map((part, i, arr) => (
+                        <span key={i}>
+                          {part}
+                          {i < arr.length - 1 && (
+                            <span className="bg-yellow-200 px-1 rounded font-bold">
+                              {example.highlight}
+                            </span>
+                          )}
+                        </span>
+                      ))}
+                  </p>
+                  <p className="text-gray-600">{example.english}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mode === "quiz" && quizData.length > 0 && (
+        <QuizMode
+          data={quizData}
+          title={`${
+            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+          } Quiz: ${currentCaseData.name}`}
+          quizAnswers={quizAnswers}
+          showResults={showResults}
+          onAnswerSelect={(qIndex, aIndex) =>
+            setQuizAnswers({ ...quizAnswers, [qIndex]: aIndex })
+          }
+          onSubmit={handleSubmit}
+          onReset={handleReset}
+          score={score}
+          total={totalQuestions}
+        />
+      )}
+
+      {mode === "fillblank" && fillData.length > 0 && (
+        <FillBlankMode
+          data={fillData}
+          title={`${
+            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+          } Practice: ${currentCaseData.name}`}
+          answers={fillBlankAnswers}
+          showResults={showResults}
+          onAnswerSelect={(qIndex, answer) =>
+            setFillBlankAnswers({ ...fillBlankAnswers, [qIndex]: answer })
+          }
+          onSubmit={handleSubmit}
+          onReset={handleReset}
+          score={score}
+          total={totalQuestions}
+        />
+      )}
+
+      {mode === "sentence" && sentenceData.length > 0 && (
+        <SentenceMode
+          data={sentenceData}
+          title={`${
+            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+          } Build Sentence: ${currentCaseData.name}`}
+          sentenceAnswers={sentenceAnswers}
+          showResults={showResults}
+          onWordClick={handleSentenceWordClick}
+          onRemoveWord={handleSentenceRemoveWord}
+          onSubmit={handleSubmit}
+          onReset={handleReset}
+          score={score}
+          total={totalQuestions}
+        />
+      )}
+
+      {mode === "declension" && (
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-teal-600 mb-4">
+            Noun Declension Tables
+          </h2>
+          <p className="text-gray-600 mb-6">
+            See how nouns change in all 7 cases. Polish has 3 genders and each
+            declines differently!
+          </p>
+
+          <div className="space-y-6">
+            {declensionTables.map((table, tIndex) => (
+              <div
+                key={tIndex}
+                className="border-2 border-teal-200 rounded-lg overflow-hidden">
+                <div className="bg-teal-100 p-4">
+                  <h3 className="font-bold text-teal-900 text-lg">
+                    {table.title}
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="p-3 text-left font-semibold text-gray-700 border-b-2">
+                          Case
+                        </th>
+                        <th className="p-3 text-left font-semibold text-gray-700 border-b-2">
+                          Singular
+                        </th>
+                        <th className="p-3 text-left font-semibold text-gray-700 border-b-2">
+                          Plural
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {table.rows.map((row, rIndex) => (
+                        <tr
+                          key={rIndex}
+                          className="hover:bg-gray-50 transition-colors">
+                          <td className="p-3 border-b font-medium text-gray-700">
+                            {row.case}
+                          </td>
+                          <td className="p-3 border-b text-teal-700 font-medium">
+                            {row.singular}
+                          </td>
+                          <td className="p-3 border-b text-teal-700 font-medium">
+                            {row.plural}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+            <p className="text-sm text-gray-700">
+              <span className="font-bold">💡 Pro Tip:</span> Notice the
+              patterns! Masculine animate nouns (like 'kot') have different
+              Accusative forms than inanimate ones (like 'dom'). This is a key
+              feature of Polish grammar.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {((mode === "quiz" && quizData.length === 0) ||
+        (mode === "fillblank" && fillData.length === 0) ||
+        (mode === "sentence" && sentenceData.length === 0)) &&
+        mode !== "learn" &&
+        mode !== "declension" && (
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <p className="text-gray-600 text-lg">
+              No {mode === "quiz" ? "quiz questions" : "practice exercises"}{" "}
+              available for {difficulty} level yet.
+            </p>
+            <p className="text-gray-500 mt-2">
+              Try a different difficulty level!
+            </p>
+          </div>
+        )}
+    </div>
+  );
+};
+
+// Verbs Section Component
+const VerbsSection = ({
+  verbs,
+  currentVerb,
+  setCurrentVerb,
+  currentVerbData,
+  mode,
+  difficulty,
+  quizAnswers,
+  showResults,
+  score,
+  handleModeChange,
+  handleReset,
+  handleSubmit,
+  setQuizAnswers,
+}) => {
+  const quizData = currentVerbData.quiz[difficulty] || [];
+  const totalQuestions = quizData.length;
+
+  return (
+    <div>
+      {/* Navigation */}
+      <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
+        <div className="flex gap-2 flex-wrap mb-4">
+          {verbs.map((v, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setCurrentVerb(index);
+                handleReset();
+              }}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                index === currentVerb
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}>
+              {v.icon} {v.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleModeChange("learn")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "learn"
+                ? "bg-green-600 text-white"
+                : "bg-green-100 text-green-700"
+            }`}>
+            Learn
+          </button>
+          <button
+            onClick={() => handleModeChange("quiz")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === "quiz"
+                ? "bg-purple-600 text-white"
+                : "bg-purple-100 text-purple-700"
+            }`}>
+            Quiz
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      {mode === "learn" && (
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-5xl">{currentVerbData.icon}</span>
+            <div>
+              <h2 className="text-3xl font-bold text-purple-600">
+                {currentVerbData.name}
+              </h2>
+              <p className="text-xl text-gray-600">{currentVerbData.topic}</p>
+            </div>
+          </div>
+
+          <div className="mb-6 p-4 bg-purple-50 rounded-lg">
+            <h3 className="font-bold text-gray-800 mb-2">📚 Explanation:</h3>
+            <p className="text-gray-700">{currentVerbData.explanation}</p>
+          </div>
+
+          <div className="mb-6 p-4 bg-green-50 rounded-lg">
+            <h3 className="font-bold text-gray-800 mb-2">
+              💡 Think of it like:
+            </h3>
+            <p className="text-gray-700">{currentVerbData.analogy}</p>
+          </div>
+
+          {currentVerbData.aspectPairs && (
+            <div className="mb-6">
+              <h3 className="font-bold text-gray-800 mb-4 text-xl">
+                Common Aspect Pairs:
+              </h3>
+              <div className="space-y-3">
+                {currentVerbData.aspectPairs.map((pair, index) => (
+                  <div
+                    key={index}
+                    className="p-4 bg-gray-50 rounded-lg border-l-4 border-purple-400">
+                    <div className="flex gap-4 items-center flex-wrap">
+                      <div className="flex-1 min-w-36">
+                        <p className="text-sm text-gray-600">Imperfective</p>
+                        <p className="text-lg font-bold text-blue-600">
+                          {pair.imperfective}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400" />
+                      <div className="flex-1 min-w-36">
+                        <p className="text-sm text-gray-600">Perfective</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {pair.perfective}
+                        </p>
+                      </div>
+                      <div className="flex-1 min-w-48">
+                        <p className="text-gray-700">{pair.english}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === "quiz" && quizData.length > 0 && (
+        <QuizMode
+          data={quizData}
+          title={`${
+            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+          } Quiz: ${currentVerbData.name}`}
+          quizAnswers={quizAnswers}
+          showResults={showResults}
+          onAnswerSelect={(qIndex, aIndex) =>
+            setQuizAnswers({ ...quizAnswers, [qIndex]: aIndex })
+          }
+          onSubmit={handleSubmit}
+          onReset={handleReset}
+          score={score}
+          total={totalQuestions}
+        />
+      )}
+
+      {mode === "quiz" && quizData.length === 0 && (
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <p className="text-gray-600 text-lg">
+            No quiz questions available for {difficulty} level yet.
+          </p>
+          <p className="text-gray-500 mt-2">
+            Try a different difficulty level!
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Quiz Mode Component
+const QuizMode = ({
+  data,
+  title,
+  quizAnswers,
+  showResults,
+  onAnswerSelect,
+  onSubmit,
+  onReset,
+  score,
+  total,
+}) => (
+  <div className="bg-white rounded-lg shadow-lg p-8">
+    <h2 className="text-2xl font-bold text-purple-600 mb-6">{title}</h2>
+    <div className="space-y-6 mb-8">
+      {data.map((q, qIndex) => (
+        <div key={qIndex} className="p-4 bg-gray-50 rounded-lg">
+          <p className="font-medium text-gray-800 mb-4">
+            {qIndex + 1}. {q.question}
+          </p>
+          <div className="space-y-2">
+            {q.options.map((option, oIndex) => {
+              const isSelected = quizAnswers[qIndex] === oIndex;
+              const isCorrect = oIndex === q.correct;
+              const showCorrect = showResults && isCorrect;
+              const showIncorrect = showResults && isSelected && !isCorrect;
+
+              return (
+                <button
+                  key={oIndex}
+                  onClick={() => onAnswerSelect(qIndex, oIndex)}
+                  disabled={showResults}
+                  className={`w-full p-3 rounded-lg text-left transition-all ${
+                    showCorrect
+                      ? "bg-green-100 border-2 border-green-500"
+                      : showIncorrect
+                      ? "bg-red-100 border-2 border-red-500"
+                      : isSelected
+                      ? "bg-purple-100 border-2 border-purple-400"
+                      : "bg-white border-2 border-gray-200 hover:border-purple-300"
+                  } ${showResults ? "cursor-default" : "cursor-pointer"}`}>
+                  <div className="flex items-center justify-between">
+                    <span>{option}</span>
+                    {showCorrect && (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    )}
+                    {showIncorrect && (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {showResults && (
+            <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+              <p className="text-sm text-gray-700">
+                <span className="font-bold">Explanation:</span> {q.explanation}
+              </p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    {!showResults ? (
+      <button
+        onClick={onSubmit}
+        disabled={Object.keys(quizAnswers).length < total}
+        className="w-full bg-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+        Submit Answers
+      </button>
+    ) : (
+      <ScoreDisplay score={score} total={total} onReset={onReset} />
+    )}
+  </div>
+);
+
+// Fill Blank Mode Component
+const FillBlankMode = ({
+  data,
+  title,
+  answers,
+  showResults,
+  onAnswerSelect,
+  onSubmit,
+  onReset,
+  score,
+  total,
+}) => (
+  <div className="bg-white rounded-lg shadow-lg p-8">
+    <h2 className="text-2xl font-bold text-orange-600 mb-6">{title}</h2>
+    <div className="space-y-6 mb-8">
+      {data.map((q, qIndex) => (
+        <div key={qIndex} className="p-4 bg-gray-50 rounded-lg">
+          <p className="font-medium text-gray-800 mb-2 text-lg">
+            {qIndex + 1}. {q.sentence}
+          </p>
+          <p className="text-sm text-gray-600 mb-2">English: {q.english}</p>
+          {q.hint && (
+            <p className="text-sm text-indigo-600 mb-4">💡 Hint: {q.hint}</p>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            {q.options.map((option, oIndex) => {
+              const isSelected = answers[qIndex] === option;
+              const isCorrect = option === q.correct;
+              const showCorrect = showResults && isCorrect;
+              const showIncorrect = showResults && isSelected && !isCorrect;
+
+              return (
+                <button
+                  key={oIndex}
+                  onClick={() => onAnswerSelect(qIndex, option)}
+                  disabled={showResults}
+                  className={`p-3 rounded-lg text-center font-medium transition-all ${
+                    showCorrect
+                      ? "bg-green-100 border-2 border-green-500"
+                      : showIncorrect
+                      ? "bg-red-100 border-2 border-red-500"
+                      : isSelected
+                      ? "bg-orange-100 border-2 border-orange-400"
+                      : "bg-white border-2 border-gray-200 hover:border-orange-300"
+                  } ${showResults ? "cursor-default" : "cursor-pointer"}`}>
+                  <div className="flex items-center justify-center gap-2">
+                    <span>{option}</span>
+                    {showCorrect && (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    )}
+                    {showIncorrect && (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {!showResults ? (
+      <button
+        onClick={onSubmit}
+        disabled={Object.keys(answers).length < total}
+        className="w-full bg-orange-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-orange-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+        Submit Answers
+      </button>
+    ) : (
+      <ScoreDisplay score={score} total={total} onReset={onReset} />
+    )}
+  </div>
+);
+
+// Sentence Mode Component
+const SentenceMode = ({
+  data,
+  title,
+  sentenceAnswers,
+  showResults,
+  onWordClick,
+  onRemoveWord,
+  onSubmit,
+  onReset,
+  score,
+  total,
+}) => (
+  <div className="bg-white rounded-lg shadow-lg p-8">
+    <h2 className="text-2xl font-bold text-blue-600 mb-4">{title}</h2>
+    <p className="text-gray-600 mb-6">
+      Click the words in the correct order to build the sentence. Click on words
+      in your answer to remove them.
+    </p>
+
+    <div className="space-y-6 mb-8">
+      {data.map((q, qIndex) => {
+        const usedWords = sentenceAnswers[qIndex] || [];
+        const availableWords = q.words.filter((w) => !usedWords.includes(w));
+        const userAnswer = usedWords.join(" ");
+        const isCorrect = userAnswer === q.correct;
+
+        return (
+          <div key={qIndex} className="p-4 bg-gray-50 rounded-lg">
+            <p className="font-medium text-gray-800 mb-2">
+              {qIndex + 1}. Build this sentence:
+            </p>
+            <p className="text-gray-600 mb-3">English: {q.english}</p>
+            <p className="text-sm text-indigo-600 mb-4">💡 Hint: {q.hint}</p>
+
+            <div className="mb-4 p-4 bg-white rounded-lg border-2 border-blue-300 min-h-16">
+              <p className="text-xs text-gray-500 mb-2">Your answer:</p>
+              <div className="flex flex-wrap gap-2">
+                {usedWords.map((word, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onRemoveWord(qIndex, idx)}
+                    disabled={showResults}
+                    className={`px-3 py-2 rounded-lg font-medium ${
+                      showResults && isCorrect
+                        ? "bg-green-100 text-green-700"
+                        : showResults && !isCorrect
+                        ? "bg-red-100 text-red-700"
+                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+                    }`}>
+                    {word}
+                  </button>
+                ))}
+                {usedWords.length === 0 && (
+                  <span className="text-gray-400 italic">
+                    Click words below to build sentence...
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!showResults && (
+              <div className="flex flex-wrap gap-2">
+                {availableWords.map((word, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onWordClick(qIndex, word)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-100 cursor-pointer transition-colors">
+                    {word}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showResults && (
+              <div
+                className={`mt-3 p-3 rounded border-l-4 ${
+                  isCorrect
+                    ? "bg-green-50 border-green-400"
+                    : "bg-red-50 border-red-400"
+                }`}>
+                <p className="text-sm text-gray-700">
+                  <span className="font-bold">
+                    {isCorrect ? "✅ Correct!" : "❌ Incorrect."}
+                  </span>
+                  {!isCorrect && ` Correct answer: ${q.correct}`}
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    {!showResults ? (
+      <button
+        onClick={onSubmit}
+        disabled={
+          Object.keys(sentenceAnswers).length < total ||
+          Object.values(sentenceAnswers).some((ans) => ans.length === 0)
+        }
+        className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+        Submit Answers
+      </button>
+    ) : (
+      <ScoreDisplay score={score} total={total} onReset={onReset} />
+    )}
+  </div>
+);
+
+// Score Display Component
+const ScoreDisplay = ({ score, total, onReset }) => {
+  const percentage = Math.round((score / total) * 100);
+
+  return (
+    <div>
+      <div className="mb-6 p-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-center">
+        <p className="text-xl mb-2">Your Score</p>
+        <p className="text-5xl font-bold mb-2">
+          {score} / {total}
+        </p>
+        <p className="text-2xl font-semibold mb-2">{percentage}%</p>
+        <p className="text-lg">
+          {percentage === 100
+            ? "🎉 Perfect! You mastered this!"
+            : percentage >= 90
+            ? "🌟 Excellent! Almost perfect!"
+            : percentage >= 70
+            ? "👍 Great job! Keep practicing!"
+            : percentage >= 50
+            ? "📚 Good effort! Review and try again!"
+            : "💪 Keep studying! You'll get it!"}
+        </p>
+      </div>
+
+      <button
+        onClick={onReset}
+        className="w-full bg-gray-500 text-white py-4 rounded-lg font-bold text-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+        <RefreshCw className="w-5 h-5" />
+        Try Again
+      </button>
+    </div>
+  );
+};
+
+export default PolishGrammarApp;
