@@ -1,264 +1,46 @@
-import React, { useState, useEffect } from "react";
-import {
-  Book,
-  Award,
-  CheckCircle,
-  XCircle,
-  ArrowRight,
-  RefreshCw,
-  Edit3,
-  Shuffle,
-  Table,
-  Zap,
-  Clock,
-  Repeat,
-  TrendingUp,
-  Target,
-  Calendar,
-  Star,
-  Download,
-  Upload,
-} from "lucide-react";
+import React, { useState } from "react";
+import { TrendingUp, Target, Calendar, Star, Download, Upload } from "lucide-react";
+
+// Data imports
 import { cases } from "./data/cases";
 import { declensionTables } from "./data/declensionTables";
 import { verbs } from "./data/verbs";
 
+// Hooks
+import { useProgress } from "./hooks/useProgress";
+import { useQuiz } from "./hooks/useQuiz";
+import { useStreak } from "./hooks/useStreak";
+
+// Utils
+import { calculateOverallAccuracy } from "./utils/progressCalculations";
+import { exportProgressToJSON, parseProgressFile } from "./utils/exportHelpers";
+import { getRecommendedTopic } from "./utils/recommendations";
+import { getTopicsDueForReview } from "./utils/spacedRepetition";
+
+// Layout Components
+import Header from "./components/layout/Header";
+import Navigation from "./components/layout/Navigation";
+import DifficultySelector from "./components/layout/DifficultySelector";
+import Footer from "./components/layout/Footer";
+
+// Section Components
+import CasesSection from "./components/cases/CasesSection";
+import VerbsSection from "./components/verbs/VerbsSection";
+
 const PolishGrammarApp = () => {
-  const [section, setSection] = useState("dashboard"); // dashboard, cases, verbs
+  // UI State
+  const [section, setSection] = useState("dashboard");
   const [currentCase, setCurrentCase] = useState(0);
   const [currentVerb, setCurrentVerb] = useState(0);
   const [mode, setMode] = useState("learn");
-  const [difficulty, setDifficulty] = useState("beginner"); // beginner, intermediate, advanced
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [showResults, setShowResults] = useState(false);
-  const [score, setScore] = useState(0);
-  const [fillBlankAnswers, setFillBlankAnswers] = useState({});
-  const [sentenceAnswers, setSentenceAnswers] = useState({});
+  const [difficulty, setDifficulty] = useState("beginner");
 
-  // Phase 4: Progress tracking state
-  const [progress, setProgress] = useState({
-    cases: {},
-    verbs: {},
-    totalScore: 0,
-    totalAttempts: 0,
-    streak: 0,
-    lastStudyDate: null,
-    weakAreas: [],
-    masteredTopics: [],
-  });
+  // Custom Hooks
+  const { progress, setProgress, reviewSchedule, updateProgress } = useProgress(cases, verbs);
+  const quiz = useQuiz();
+  useStreak(progress, setProgress);
 
-  // Spaced repetition data
-  const [reviewSchedule, setReviewSchedule] = useState({});
-
-  // Initialize progress on mount
-  useEffect(() => {
-    // Check if user studied today
-    const today = new Date().toDateString();
-    if (progress.lastStudyDate && progress.lastStudyDate === today) {
-      // Already studied today
-    } else if (progress.lastStudyDate) {
-      const lastDate = new Date(progress.lastStudyDate);
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      if (lastDate.toDateString() === yesterday.toDateString()) {
-        // Studied yesterday, increment streak
-        setProgress((prev) => ({
-          ...prev,
-          streak: prev.streak + 1,
-          lastStudyDate: today,
-        }));
-      } else {
-        // Missed days, reset streak
-        setProgress((prev) => ({ ...prev, streak: 1, lastStudyDate: today }));
-      }
-    }
-  }, []);
-
-
-
-
-  // Calculate spaced repetition intervals
-  const getNextReviewDate = (topicId, performance) => {
-    const now = new Date();
-    const intervals = {
-      poor: 1, // 1 day
-      good: 3, // 3 days
-      excellent: 7, // 7 days
-    };
-
-    const currentReview = reviewSchedule[topicId] || {
-      interval: 1,
-      lastReview: now,
-    };
-    let newInterval = intervals[performance];
-
-    if (performance === "excellent" && currentReview.interval >= 7) {
-      newInterval = currentReview.interval * 2; // Double interval for mastered topics
-    }
-
-    const nextDate = new Date(now);
-    nextDate.setDate(nextDate.getDate() + newInterval);
-
-    return { interval: newInterval, lastReview: now, nextReview: nextDate };
-  };
-
-  // Update progress after quiz completion
-  const updateProgress = (topicType, topicIndex, score, total) => {
-    const percentage = (score / total) * 100;
-    const topicId = `${topicType}-${topicIndex}`;
-
-    setProgress((prev) => {
-      const newProgress = { ...prev };
-
-      // Update topic-specific progress
-      if (!newProgress[topicType][topicIndex]) {
-        newProgress[topicType][topicIndex] = {
-          attempts: 0,
-          totalScore: 0,
-          bestScore: 0,
-          lastAttempt: new Date(),
-        };
-      }
-
-      const topicProgress = newProgress[topicType][topicIndex];
-      topicProgress.attempts += 1;
-      topicProgress.totalScore += score;
-      topicProgress.bestScore = Math.max(topicProgress.bestScore, percentage);
-      topicProgress.lastAttempt = new Date();
-
-      // Update overall stats
-      newProgress.totalScore += score;
-      newProgress.totalAttempts += total;
-      newProgress.lastStudyDate = new Date().toDateString();
-
-      // Identify weak areas (< 70%)
-      if (percentage < 70) {
-        const topicName =
-          topicType === "cases"
-            ? cases[topicIndex].name
-            : verbs[topicIndex].name;
-        if (!newProgress.weakAreas.includes(topicName)) {
-          newProgress.weakAreas.push(topicName);
-        }
-      } else {
-        // Remove from weak areas if improved
-        const topicName =
-          topicType === "cases"
-            ? cases[topicIndex].name
-            : verbs[topicIndex].name;
-        newProgress.weakAreas = newProgress.weakAreas.filter(
-          (area) => area !== topicName
-        );
-      }
-
-      // Mark as mastered (>= 90% on 3+ attempts)
-      if (percentage >= 90 && topicProgress.attempts >= 3) {
-        const topicName =
-          topicType === "cases"
-            ? cases[topicIndex].name
-            : verbs[topicIndex].name;
-        if (!newProgress.masteredTopics.includes(topicName)) {
-          newProgress.masteredTopics.push(topicName);
-        }
-      }
-
-      return newProgress;
-    });
-
-    // Update spaced repetition schedule
-    const performance =
-      percentage >= 90 ? "excellent" : percentage >= 70 ? "good" : "poor";
-    setReviewSchedule((prev) => ({
-      ...prev,
-      [topicId]: getNextReviewDate(topicId, performance),
-    }));
-  };
-
-  // Get topics due for review
-  const getTopicsDueForReview = () => {
-    const now = new Date();
-    const dueTopics = [];
-
-    Object.keys(reviewSchedule).forEach((topicId) => {
-      const review = reviewSchedule[topicId];
-      if (new Date(review.nextReview) <= now) {
-        dueTopics.push(topicId);
-      }
-    });
-
-    return dueTopics;
-  };
-
-  // Get recommended next topic
-  const getRecommendedTopic = () => {
-    // Priority: weak areas > due for review > new topics > random
-    if (progress.weakAreas.length > 0) {
-      return { type: "weak", topic: progress.weakAreas[0] };
-    }
-
-    const dueTopics = getTopicsDueForReview();
-    if (dueTopics.length > 0) {
-      return { type: "review", topicId: dueTopics[0] };
-    }
-
-    // Find topics not yet attempted
-    const allTopics = [...cases, ...verbs];
-    for (let i = 0; i < cases.length; i++) {
-      if (!progress.cases[i]) {
-        return { type: "new", section: "cases", index: i };
-      }
-    }
-
-    for (let i = 0; i < verbs.length; i++) {
-      if (!progress.verbs[i]) {
-        return { type: "new", section: "verbs", index: i };
-      }
-    }
-
-    return { type: "random", section: "cases", index: 0 };
-  };
-
-  // Export progress
-  const exportProgress = () => {
-    const data = JSON.stringify(
-      { progress, reviewSchedule, difficulty },
-      null,
-      2
-    );
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `polish-grammar-progress-${
-      new Date().toISOString().split("T")[0]
-    }.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // Import progress
-  const importProgress = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          if (data.progress) setProgress(data.progress);
-          if (data.reviewSchedule) setReviewSchedule(data.reviewSchedule);
-          if (data.difficulty) setDifficulty(data.difficulty);
-          alert("Progress imported successfully!");
-        } catch (error) {
-          alert("Error importing progress. Please check the file format.");
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
+  // Handlers
   const handleSubmit = () => {
     let correctCount = 0;
     let totalQuestions = 0;
@@ -270,19 +52,19 @@ const PolishGrammarApp = () => {
         const quizData = currentCaseData.quiz[difficulty] || [];
         totalQuestions = quizData.length;
         quizData.forEach((q, index) => {
-          if (quizAnswers[index] === q.correct) correctCount++;
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
         });
       } else if (mode === "fillblank") {
         const fillData = currentCaseData.fillBlanks[difficulty] || [];
         totalQuestions = fillData.length;
         fillData.forEach((q, index) => {
-          if (fillBlankAnswers[index] === q.correct) correctCount++;
+          if (quiz.fillBlankAnswers[index] === q.correct) correctCount++;
         });
       } else if (mode === "sentence") {
         const sentenceData = currentCaseData.sentenceBuilder[difficulty] || [];
         totalQuestions = sentenceData.length;
         sentenceData.forEach((q, index) => {
-          const userAnswer = (sentenceAnswers[index] || []).join(" ");
+          const userAnswer = (quiz.sentenceAnswers[index] || []).join(" ");
           if (userAnswer === q.correct) correctCount++;
         });
       }
@@ -295,22 +77,19 @@ const PolishGrammarApp = () => {
 
       if (mode === "quiz") {
         quizData.forEach((q, index) => {
-          if (quizAnswers[index] === q.correct) correctCount++;
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
         });
       }
 
       updateProgress("verbs", currentVerb, correctCount, totalQuestions);
     }
 
-    setScore(correctCount);
-    setShowResults(true);
+    quiz.setScore(correctCount);
+    quiz.setShowResults(true);
   };
 
   const handleReset = () => {
-    setQuizAnswers({});
-    setFillBlankAnswers({});
-    setSentenceAnswers({});
-    setShowResults(false);
+    quiz.resetQuiz();
   };
 
   const handleModeChange = (newMode) => {
@@ -324,110 +103,40 @@ const PolishGrammarApp = () => {
     handleReset();
   };
 
+  const handleExportProgress = () => {
+    exportProgressToJSON(progress, reviewSchedule, difficulty);
+  };
+
+  const handleImportProgress = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        const data = await parseProgressFile(file);
+        if (data.progress) setProgress(data.progress);
+        alert("Progress imported successfully!");
+      } catch (error) {
+        alert("Error importing progress. Please check the file format.");
+      }
+    }
+  };
+
+  // Computed values
   const currentCaseData = section === "cases" ? cases[currentCase] : null;
   const currentVerbData = section === "verbs" ? verbs[currentVerb] : null;
-
-  const overallAccuracy =
-    progress.totalAttempts > 0
-      ? Math.round((progress.totalScore / progress.totalAttempts) * 100)
-      : 0;
+  const overallAccuracy = calculateOverallAccuracy(progress);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        <Header streak={progress.streak} />
+
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Book className="w-8 h-8 text-indigo-600" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">
-                  Polish Grammar Master
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Your Complete Learning System 🎓
-                </p>
-              </div>
-            </div>
-
-            {/* Streak Counter */}
-            <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-4 py-2 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5" />
-                <div>
-                  <p className="text-xs">Study Streak</p>
-                  <p className="text-xl font-bold">{progress.streak} days</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section Selector */}
-          <div className="flex gap-3 mb-4">
-            <button
-              onClick={() => handleSectionChange("dashboard")}
-              className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
-                section === "dashboard"
-                  ? "bg-gradient-to-r from-green-500 to-teal-500 text-white shadow-lg"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              📊 Dashboard
-            </button>
-            <button
-              onClick={() => handleSectionChange("cases")}
-              className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
-                section === "cases"
-                  ? "bg-indigo-600 text-white shadow-lg"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              📚 Cases
-            </button>
-            <button
-              onClick={() => handleSectionChange("verbs")}
-              className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
-                section === "verbs"
-                  ? "bg-purple-600 text-white shadow-lg"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              ⚡ Verbs
-            </button>
-          </div>
-
-          {/* Difficulty Selector */}
-          {section !== "dashboard" && (
-            <div className="flex gap-2 items-center mb-4">
-              <span className="text-sm font-medium text-gray-700">
-                Difficulty:
-              </span>
-              <button
-                onClick={() => setDifficulty("beginner")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  difficulty === "beginner"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}>
-                🌱 Beginner
-              </button>
-              <button
-                onClick={() => setDifficulty("intermediate")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  difficulty === "intermediate"
-                    ? "bg-yellow-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}>
-                🔥 Intermediate
-              </button>
-              <button
-                onClick={() => setDifficulty("advanced")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  difficulty === "advanced"
-                    ? "bg-red-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}>
-                💎 Advanced
-              </button>
-            </div>
-          )}
+          <Navigation section={section} onSectionChange={handleSectionChange} />
+          <DifficultySelector
+            difficulty={difficulty}
+            onDifficultyChange={setDifficulty}
+            show={section !== "dashboard"}
+          />
         </div>
 
         {/* Dashboard */}
@@ -440,12 +149,9 @@ const PolishGrammarApp = () => {
                   <TrendingUp className="w-6 h-6 text-green-600" />
                   <h3 className="font-bold text-gray-800">Overall Accuracy</h3>
                 </div>
-                <p className="text-4xl font-bold text-green-600">
-                  {overallAccuracy}%
-                </p>
+                <p className="text-4xl font-bold text-green-600">{overallAccuracy}%</p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {progress.totalScore} / {progress.totalAttempts} questions
-                  correct
+                  {progress.totalScore} / {progress.totalAttempts} questions correct
                 </p>
               </div>
 
@@ -470,11 +176,9 @@ const PolishGrammarApp = () => {
                   <h3 className="font-bold text-gray-800">Review Due</h3>
                 </div>
                 <p className="text-4xl font-bold text-purple-600">
-                  {getTopicsDueForReview().length}
+                  {getTopicsDueForReview(reviewSchedule).length}
                 </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  Topics to review today
-                </p>
+                <p className="text-sm text-gray-600 mt-1">Topics to review today</p>
               </div>
             </div>
 
@@ -486,28 +190,20 @@ const PolishGrammarApp = () => {
               </h3>
 
               {(() => {
-                const recommendation = getRecommendedTopic();
+                const recommendation = getRecommendedTopic(progress, reviewSchedule, cases, verbs);
                 return (
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-300">
                     {recommendation.type === "weak" && (
                       <>
-                        <p className="font-bold text-gray-800 mb-2">
-                          💪 Focus on Weak Area:
-                        </p>
+                        <p className="font-bold text-gray-800 mb-2">💪 Focus on Weak Area:</p>
                         <p className="text-lg text-gray-700">
-                          Practice{" "}
-                          <span className="font-bold text-blue-600">
-                            {recommendation.topic}
-                          </span>{" "}
-                          - you scored below 70% here.
+                          Practice <span className="font-bold text-blue-600">{recommendation.topic}</span> - you scored below 70% here.
                         </p>
                       </>
                     )}
                     {recommendation.type === "review" && (
                       <>
-                        <p className="font-bold text-gray-800 mb-2">
-                          🔄 Time for Review:
-                        </p>
+                        <p className="font-bold text-gray-800 mb-2">🔄 Time for Review:</p>
                         <p className="text-lg text-gray-700">
                           Review topics based on spaced repetition schedule.
                         </p>
@@ -515,9 +211,7 @@ const PolishGrammarApp = () => {
                     )}
                     {recommendation.type === "new" && (
                       <>
-                        <p className="font-bold text-gray-800 mb-2">
-                          ✨ Learn Something New:
-                        </p>
+                        <p className="font-bold text-gray-800 mb-2">✨ Learn Something New:</p>
                         <p className="text-lg text-gray-700">
                           Start with{" "}
                           <span className="font-bold text-blue-600">
@@ -532,13 +226,16 @@ const PolishGrammarApp = () => {
                       onClick={() => {
                         if (recommendation.section) {
                           handleSectionChange(recommendation.section);
-                          if (recommendation.section === "cases")
+                          if (recommendation.section === "cases") {
                             setCurrentCase(recommendation.index);
-                          else setCurrentVerb(recommendation.index);
+                          } else {
+                            setCurrentVerb(recommendation.index);
+                          }
                         }
                       }}
-                      className="mt-3 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">
-                      Start Learning →
+                      className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                    >
+                      Start Now →
                     </button>
                   </div>
                 );
@@ -548,17 +245,15 @@ const PolishGrammarApp = () => {
             {/* Weak Areas */}
             {progress.weakAreas.length > 0 && (
               <div className="bg-white rounded-lg shadow-lg p-6">
-                <h3 className="font-bold text-gray-800 text-xl mb-4 flex items-center gap-2">
-                  <Target className="w-6 h-6 text-red-500" />
-                  Areas to Improve
-                </h3>
+                <h3 className="font-bold text-gray-800 text-xl mb-4">📉 Areas to Improve</h3>
                 <div className="flex flex-wrap gap-2">
-                  {progress.weakAreas.map((area, index) => (
-                    <div
-                      key={index}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium">
+                  {progress.weakAreas.map((area) => (
+                    <span
+                      key={area}
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-full font-medium"
+                    >
                       {area}
-                    </div>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -566,33 +261,22 @@ const PolishGrammarApp = () => {
 
             {/* Progress by Topic */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="font-bold text-gray-800 text-xl mb-4">
-                Progress by Topic
-              </h3>
-
+              <h3 className="font-bold text-gray-800 text-xl mb-4">📊 Progress by Topic</h3>
               <div className="space-y-4">
+                {/* Cases Progress */}
                 <div>
-                  <h4 className="font-bold text-gray-700 mb-2">Cases</h4>
+                  <h4 className="font-semibold text-gray-700 mb-2">Cases</h4>
                   {cases.map((caseItem, index) => {
                     const caseProgress = progress.cases[index];
                     const accuracy = caseProgress
-                      ? Math.round(
-                          (caseProgress.totalScore /
-                            (caseProgress.attempts * 2)) *
-                            100
-                        )
+                      ? Math.round((caseProgress.totalScore / (caseProgress.attempts * 10)) * 100)
                       : 0;
-
                     return (
                       <div key={index} className="mb-3">
-                        <div className="flex justify-between items-center mb-1">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">{caseItem.name}</span>
                           <span className="text-sm font-medium text-gray-700">
-                            {caseItem.name}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {caseProgress
-                              ? `${accuracy}% (${caseProgress.attempts} attempts)`
-                              : "Not started"}
+                            {caseProgress ? `${accuracy}%` : "Not started"}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -614,28 +298,20 @@ const PolishGrammarApp = () => {
                   })}
                 </div>
 
+                {/* Verbs Progress */}
                 <div>
-                  <h4 className="font-bold text-gray-700 mb-2">Verbs</h4>
+                  <h4 className="font-semibold text-gray-700 mb-2">Verbs</h4>
                   {verbs.map((verb, index) => {
                     const verbProgress = progress.verbs[index];
                     const accuracy = verbProgress
-                      ? Math.round(
-                          (verbProgress.totalScore /
-                            (verbProgress.attempts * 2)) *
-                            100
-                        )
+                      ? Math.round((verbProgress.totalScore / (verbProgress.attempts * 10)) * 100)
                       : 0;
-
                     return (
                       <div key={index} className="mb-3">
-                        <div className="flex justify-between items-center mb-1">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">{verb.name}</span>
                           <span className="text-sm font-medium text-gray-700">
-                            {verb.icon} {verb.name}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {verbProgress
-                              ? `${accuracy}% (${verbProgress.attempts} attempts)`
-                              : "Not started"}
+                            {verbProgress ? `${accuracy}%` : "Not started"}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -661,17 +337,15 @@ const PolishGrammarApp = () => {
 
             {/* Data Management */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="font-bold text-gray-800 text-xl mb-4">
-                Manage Your Progress
-              </h3>
+              <h3 className="font-bold text-gray-800 text-xl mb-4">Manage Your Progress</h3>
               <p className="text-sm text-gray-600 mb-4">
-                ⚠️ Your progress is stored in your browser's memory. Export your
-                data to save it permanently!
+                ⚠️ Your progress is stored in your browser's memory. Export your data to save it permanently!
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={exportProgress}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                  onClick={handleExportProgress}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                >
                   <Download className="w-5 h-5" />
                   Export Progress
                 </button>
@@ -681,7 +355,7 @@ const PolishGrammarApp = () => {
                   <input
                     type="file"
                     accept=".json"
-                    onChange={importProgress}
+                    onChange={handleImportProgress}
                     className="hidden"
                   />
                 </label>
@@ -699,17 +373,17 @@ const PolishGrammarApp = () => {
             currentCaseData={currentCaseData}
             mode={mode}
             difficulty={difficulty}
-            quizAnswers={quizAnswers}
-            fillBlankAnswers={fillBlankAnswers}
-            sentenceAnswers={sentenceAnswers}
-            showResults={showResults}
-            score={score}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            sentenceAnswers={quiz.sentenceAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
             handleModeChange={handleModeChange}
             handleReset={handleReset}
             handleSubmit={handleSubmit}
-            setQuizAnswers={setQuizAnswers}
-            setFillBlankAnswers={setFillBlankAnswers}
-            setSentenceAnswers={setSentenceAnswers}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+            setSentenceAnswers={quiz.setSentenceAnswers}
             declensionTables={declensionTables}
           />
         )}
@@ -723,790 +397,18 @@ const PolishGrammarApp = () => {
             currentVerbData={currentVerbData}
             mode={mode}
             difficulty={difficulty}
-            quizAnswers={quizAnswers}
-            showResults={showResults}
-            score={score}
+            quizAnswers={quiz.quizAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
             handleModeChange={handleModeChange}
             handleReset={handleReset}
             handleSubmit={handleSubmit}
-            setQuizAnswers={setQuizAnswers}
+            setQuizAnswers={quiz.setQuizAnswers}
           />
         )}
 
-        {/* Footer */}
-        <div className="mt-6 text-center text-gray-600">
-          <p className="text-sm font-bold">
-            Phase 4: Complete Learning System with Progress Tracking ✨
-          </p>
-          <p className="text-xs mt-2">
-            Your progress is tracked! Study daily to maintain your streak 🔥
-          </p>
-        </div>
+        <Footer />
       </div>
-    </div>
-  );
-};
-
-// Cases Section Component
-const CasesSection = ({
-  cases,
-  currentCase,
-  setCurrentCase,
-  currentCaseData,
-  mode,
-  difficulty,
-  quizAnswers,
-  fillBlankAnswers,
-  showResults,
-  score,
-  handleModeChange,
-  handleReset,
-  handleSubmit,
-  setQuizAnswers,
-  setFillBlankAnswers,
-  sentenceAnswers,
-  setSentenceAnswers,
-  declensionTables,
-}) => {
-  const quizData = currentCaseData.quiz[difficulty] || [];
-  const fillData = currentCaseData.fillBlanks[difficulty] || [];
-  const sentenceData = currentCaseData.sentenceBuilder[difficulty] || [];
-  const totalQuestions =
-    mode === "quiz"
-      ? quizData.length
-      : mode === "fillblank"
-      ? fillData.length
-      : mode === "sentence"
-      ? sentenceData.length
-      : 0;
-
-  const handleSentenceWordClick = (questionIndex, word) => {
-    if (showResults) return;
-    const current = sentenceAnswers[questionIndex] || [];
-    const newAnswer = [...current, word];
-    setSentenceAnswers({ ...sentenceAnswers, [questionIndex]: newAnswer });
-  };
-
-  const handleSentenceRemoveWord = (questionIndex, index) => {
-    if (showResults) return;
-    const current = sentenceAnswers[questionIndex] || [];
-    const newAnswer = current.filter((_, i) => i !== index);
-    setSentenceAnswers({ ...sentenceAnswers, [questionIndex]: newAnswer });
-  };
-
-  return (
-    <div>
-      {/* Navigation */}
-      <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
-        <div className="flex gap-2 flex-wrap mb-4">
-          {cases.map((c, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentCase(index);
-                handleReset();
-              }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                index === currentCase
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              {c.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => handleModeChange("learn")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "learn"
-                ? "bg-green-600 text-white"
-                : "bg-green-100 text-green-700"
-            }`}>
-            Learn
-          </button>
-          <button
-            onClick={() => handleModeChange("quiz")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "quiz"
-                ? "bg-purple-600 text-white"
-                : "bg-purple-100 text-purple-700"
-            }`}>
-            Quiz
-          </button>
-          <button
-            onClick={() => handleModeChange("fillblank")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "fillblank"
-                ? "bg-orange-600 text-white"
-                : "bg-orange-100 text-orange-700"
-            }`}>
-            Practice
-          </button>
-          <button
-            onClick={() => handleModeChange("sentence")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "sentence"
-                ? "bg-blue-600 text-white"
-                : "bg-blue-100 text-blue-700"
-            }`}>
-            Build Sentence
-          </button>
-          <button
-            onClick={() => handleModeChange("declension")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "declension"
-                ? "bg-teal-600 text-white"
-                : "bg-teal-100 text-teal-700"
-            }`}>
-            Tables
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      {mode === "learn" && (
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-3xl font-bold text-indigo-600 mb-2">
-            {currentCaseData.name} ({currentCaseData.polish})
-          </h2>
-          <p className="text-xl text-gray-600 mb-6">
-            {currentCaseData.question} • {currentCaseData.questionEng}
-          </p>
-
-          <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
-            <h3 className="font-bold text-gray-800 mb-2">📚 When to use:</h3>
-            <p className="text-gray-700">{currentCaseData.usage}</p>
-          </div>
-
-          <div className="mb-6 p-4 bg-green-50 rounded-lg">
-            <h3 className="font-bold text-gray-800 mb-2">
-              💡 Think of it like:
-            </h3>
-            <p className="text-gray-700">{currentCaseData.analogy}</p>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="font-bold text-gray-800 mb-4 text-xl">Examples:</h3>
-            <div className="space-y-4">
-              {currentCaseData.examples.map((example, index) => (
-                <div
-                  key={index}
-                  className="p-4 bg-gray-50 rounded-lg border-l-4 border-indigo-400">
-                  <p className="text-lg font-medium text-gray-800 mb-1">
-                    {example.polish
-                      .split(example.highlight)
-                      .map((part, i, arr) => (
-                        <span key={i}>
-                          {part}
-                          {i < arr.length - 1 && (
-                            <span className="bg-yellow-200 px-1 rounded font-bold">
-                              {example.highlight}
-                            </span>
-                          )}
-                        </span>
-                      ))}
-                  </p>
-                  <p className="text-gray-600">{example.english}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mode === "quiz" && quizData.length > 0 && (
-        <QuizMode
-          data={quizData}
-          title={`${
-            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-          } Quiz: ${currentCaseData.name}`}
-          quizAnswers={quizAnswers}
-          showResults={showResults}
-          onAnswerSelect={(qIndex, aIndex) =>
-            setQuizAnswers({ ...quizAnswers, [qIndex]: aIndex })
-          }
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          score={score}
-          total={totalQuestions}
-        />
-      )}
-
-      {mode === "fillblank" && fillData.length > 0 && (
-        <FillBlankMode
-          data={fillData}
-          title={`${
-            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-          } Practice: ${currentCaseData.name}`}
-          answers={fillBlankAnswers}
-          showResults={showResults}
-          onAnswerSelect={(qIndex, answer) =>
-            setFillBlankAnswers({ ...fillBlankAnswers, [qIndex]: answer })
-          }
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          score={score}
-          total={totalQuestions}
-        />
-      )}
-
-      {mode === "sentence" && sentenceData.length > 0 && (
-        <SentenceMode
-          data={sentenceData}
-          title={`${
-            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-          } Build Sentence: ${currentCaseData.name}`}
-          sentenceAnswers={sentenceAnswers}
-          showResults={showResults}
-          onWordClick={handleSentenceWordClick}
-          onRemoveWord={handleSentenceRemoveWord}
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          score={score}
-          total={totalQuestions}
-        />
-      )}
-
-      {mode === "declension" && (
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-teal-600 mb-4">
-            Noun Declension Tables
-          </h2>
-          <p className="text-gray-600 mb-6">
-            See how nouns change in all 7 cases. Polish has 3 genders and each
-            declines differently!
-          </p>
-
-          <div className="space-y-6">
-            {declensionTables.map((table, tIndex) => (
-              <div
-                key={tIndex}
-                className="border-2 border-teal-200 rounded-lg overflow-hidden">
-                <div className="bg-teal-100 p-4">
-                  <h3 className="font-bold text-teal-900 text-lg">
-                    {table.title}
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="p-3 text-left font-semibold text-gray-700 border-b-2">
-                          Case
-                        </th>
-                        <th className="p-3 text-left font-semibold text-gray-700 border-b-2">
-                          Singular
-                        </th>
-                        <th className="p-3 text-left font-semibold text-gray-700 border-b-2">
-                          Plural
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {table.rows.map((row, rIndex) => (
-                        <tr
-                          key={rIndex}
-                          className="hover:bg-gray-50 transition-colors">
-                          <td className="p-3 border-b font-medium text-gray-700">
-                            {row.case}
-                          </td>
-                          <td className="p-3 border-b text-teal-700 font-medium">
-                            {row.singular}
-                          </td>
-                          <td className="p-3 border-b text-teal-700 font-medium">
-                            {row.plural}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-            <p className="text-sm text-gray-700">
-              <span className="font-bold">💡 Pro Tip:</span> Notice the
-              patterns! Masculine animate nouns (like 'kot') have different
-              Accusative forms than inanimate ones (like 'dom'). This is a key
-              feature of Polish grammar.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {((mode === "quiz" && quizData.length === 0) ||
-        (mode === "fillblank" && fillData.length === 0) ||
-        (mode === "sentence" && sentenceData.length === 0)) &&
-        mode !== "learn" &&
-        mode !== "declension" && (
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <p className="text-gray-600 text-lg">
-              No {mode === "quiz" ? "quiz questions" : "practice exercises"}{" "}
-              available for {difficulty} level yet.
-            </p>
-            <p className="text-gray-500 mt-2">
-              Try a different difficulty level!
-            </p>
-          </div>
-        )}
-    </div>
-  );
-};
-
-// Verbs Section Component
-const VerbsSection = ({
-  verbs,
-  currentVerb,
-  setCurrentVerb,
-  currentVerbData,
-  mode,
-  difficulty,
-  quizAnswers,
-  showResults,
-  score,
-  handleModeChange,
-  handleReset,
-  handleSubmit,
-  setQuizAnswers,
-}) => {
-  const quizData = currentVerbData.quiz[difficulty] || [];
-  const totalQuestions = quizData.length;
-
-  return (
-    <div>
-      {/* Navigation */}
-      <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
-        <div className="flex gap-2 flex-wrap mb-4">
-          {verbs.map((v, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentVerb(index);
-                handleReset();
-              }}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                index === currentVerb
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              {v.icon} {v.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleModeChange("learn")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "learn"
-                ? "bg-green-600 text-white"
-                : "bg-green-100 text-green-700"
-            }`}>
-            Learn
-          </button>
-          <button
-            onClick={() => handleModeChange("quiz")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === "quiz"
-                ? "bg-purple-600 text-white"
-                : "bg-purple-100 text-purple-700"
-            }`}>
-            Quiz
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      {mode === "learn" && (
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-5xl">{currentVerbData.icon}</span>
-            <div>
-              <h2 className="text-3xl font-bold text-purple-600">
-                {currentVerbData.name}
-              </h2>
-              <p className="text-xl text-gray-600">{currentVerbData.topic}</p>
-            </div>
-          </div>
-
-          <div className="mb-6 p-4 bg-purple-50 rounded-lg">
-            <h3 className="font-bold text-gray-800 mb-2">📚 Explanation:</h3>
-            <p className="text-gray-700">{currentVerbData.explanation}</p>
-          </div>
-
-          <div className="mb-6 p-4 bg-green-50 rounded-lg">
-            <h3 className="font-bold text-gray-800 mb-2">
-              💡 Think of it like:
-            </h3>
-            <p className="text-gray-700">{currentVerbData.analogy}</p>
-          </div>
-
-          {currentVerbData.aspectPairs && (
-            <div className="mb-6">
-              <h3 className="font-bold text-gray-800 mb-4 text-xl">
-                Common Aspect Pairs:
-              </h3>
-              <div className="space-y-3">
-                {currentVerbData.aspectPairs.map((pair, index) => (
-                  <div
-                    key={index}
-                    className="p-4 bg-gray-50 rounded-lg border-l-4 border-purple-400">
-                    <div className="flex gap-4 items-center flex-wrap">
-                      <div className="flex-1 min-w-36">
-                        <p className="text-sm text-gray-600">Imperfective</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          {pair.imperfective}
-                        </p>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400" />
-                      <div className="flex-1 min-w-36">
-                        <p className="text-sm text-gray-600">Perfective</p>
-                        <p className="text-lg font-bold text-green-600">
-                          {pair.perfective}
-                        </p>
-                      </div>
-                      <div className="flex-1 min-w-48">
-                        <p className="text-gray-700">{pair.english}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {mode === "quiz" && quizData.length > 0 && (
-        <QuizMode
-          data={quizData}
-          title={`${
-            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-          } Quiz: ${currentVerbData.name}`}
-          quizAnswers={quizAnswers}
-          showResults={showResults}
-          onAnswerSelect={(qIndex, aIndex) =>
-            setQuizAnswers({ ...quizAnswers, [qIndex]: aIndex })
-          }
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          score={score}
-          total={totalQuestions}
-        />
-      )}
-
-      {mode === "quiz" && quizData.length === 0 && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <p className="text-gray-600 text-lg">
-            No quiz questions available for {difficulty} level yet.
-          </p>
-          <p className="text-gray-500 mt-2">
-            Try a different difficulty level!
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Quiz Mode Component
-const QuizMode = ({
-  data,
-  title,
-  quizAnswers,
-  showResults,
-  onAnswerSelect,
-  onSubmit,
-  onReset,
-  score,
-  total,
-}) => (
-  <div className="bg-white rounded-lg shadow-lg p-8">
-    <h2 className="text-2xl font-bold text-purple-600 mb-6">{title}</h2>
-    <div className="space-y-6 mb-8">
-      {data.map((q, qIndex) => (
-        <div key={qIndex} className="p-4 bg-gray-50 rounded-lg">
-          <p className="font-medium text-gray-800 mb-4">
-            {qIndex + 1}. {q.question}
-          </p>
-          <div className="space-y-2">
-            {q.options.map((option, oIndex) => {
-              const isSelected = quizAnswers[qIndex] === oIndex;
-              const isCorrect = oIndex === q.correct;
-              const showCorrect = showResults && isCorrect;
-              const showIncorrect = showResults && isSelected && !isCorrect;
-
-              return (
-                <button
-                  key={oIndex}
-                  onClick={() => onAnswerSelect(qIndex, oIndex)}
-                  disabled={showResults}
-                  className={`w-full p-3 rounded-lg text-left transition-all ${
-                    showCorrect
-                      ? "bg-green-100 border-2 border-green-500"
-                      : showIncorrect
-                      ? "bg-red-100 border-2 border-red-500"
-                      : isSelected
-                      ? "bg-purple-100 border-2 border-purple-400"
-                      : "bg-white border-2 border-gray-200 hover:border-purple-300"
-                  } ${showResults ? "cursor-default" : "cursor-pointer"}`}>
-                  <div className="flex items-center justify-between">
-                    <span>{option}</span>
-                    {showCorrect && (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    )}
-                    {showIncorrect && (
-                      <XCircle className="w-5 h-5 text-red-600" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          {showResults && (
-            <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
-              <p className="text-sm text-gray-700">
-                <span className="font-bold">Explanation:</span> {q.explanation}
-              </p>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-
-    {!showResults ? (
-      <button
-        onClick={onSubmit}
-        disabled={Object.keys(quizAnswers).length < total}
-        className="w-full bg-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Submit Answers
-      </button>
-    ) : (
-      <ScoreDisplay score={score} total={total} onReset={onReset} />
-    )}
-  </div>
-);
-
-// Fill Blank Mode Component
-const FillBlankMode = ({
-  data,
-  title,
-  answers,
-  showResults,
-  onAnswerSelect,
-  onSubmit,
-  onReset,
-  score,
-  total,
-}) => (
-  <div className="bg-white rounded-lg shadow-lg p-8">
-    <h2 className="text-2xl font-bold text-orange-600 mb-6">{title}</h2>
-    <div className="space-y-6 mb-8">
-      {data.map((q, qIndex) => (
-        <div key={qIndex} className="p-4 bg-gray-50 rounded-lg">
-          <p className="font-medium text-gray-800 mb-2 text-lg">
-            {qIndex + 1}. {q.sentence}
-          </p>
-          <p className="text-sm text-gray-600 mb-2">English: {q.english}</p>
-          {q.hint && (
-            <p className="text-sm text-indigo-600 mb-4">💡 Hint: {q.hint}</p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            {q.options.map((option, oIndex) => {
-              const isSelected = answers[qIndex] === option;
-              const isCorrect = option === q.correct;
-              const showCorrect = showResults && isCorrect;
-              const showIncorrect = showResults && isSelected && !isCorrect;
-
-              return (
-                <button
-                  key={oIndex}
-                  onClick={() => onAnswerSelect(qIndex, option)}
-                  disabled={showResults}
-                  className={`p-3 rounded-lg text-center font-medium transition-all ${
-                    showCorrect
-                      ? "bg-green-100 border-2 border-green-500"
-                      : showIncorrect
-                      ? "bg-red-100 border-2 border-red-500"
-                      : isSelected
-                      ? "bg-orange-100 border-2 border-orange-400"
-                      : "bg-white border-2 border-gray-200 hover:border-orange-300"
-                  } ${showResults ? "cursor-default" : "cursor-pointer"}`}>
-                  <div className="flex items-center justify-center gap-2">
-                    <span>{option}</span>
-                    {showCorrect && (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    )}
-                    {showIncorrect && (
-                      <XCircle className="w-5 h-5 text-red-600" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-
-    {!showResults ? (
-      <button
-        onClick={onSubmit}
-        disabled={Object.keys(answers).length < total}
-        className="w-full bg-orange-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-orange-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Submit Answers
-      </button>
-    ) : (
-      <ScoreDisplay score={score} total={total} onReset={onReset} />
-    )}
-  </div>
-);
-
-// Sentence Mode Component
-const SentenceMode = ({
-  data,
-  title,
-  sentenceAnswers,
-  showResults,
-  onWordClick,
-  onRemoveWord,
-  onSubmit,
-  onReset,
-  score,
-  total,
-}) => (
-  <div className="bg-white rounded-lg shadow-lg p-8">
-    <h2 className="text-2xl font-bold text-blue-600 mb-4">{title}</h2>
-    <p className="text-gray-600 mb-6">
-      Click the words in the correct order to build the sentence. Click on words
-      in your answer to remove them.
-    </p>
-
-    <div className="space-y-6 mb-8">
-      {data.map((q, qIndex) => {
-        const usedWords = sentenceAnswers[qIndex] || [];
-        const availableWords = q.words.filter((w) => !usedWords.includes(w));
-        const userAnswer = usedWords.join(" ");
-        const isCorrect = userAnswer === q.correct;
-
-        return (
-          <div key={qIndex} className="p-4 bg-gray-50 rounded-lg">
-            <p className="font-medium text-gray-800 mb-2">
-              {qIndex + 1}. Build this sentence:
-            </p>
-            <p className="text-gray-600 mb-3">English: {q.english}</p>
-            <p className="text-sm text-indigo-600 mb-4">💡 Hint: {q.hint}</p>
-
-            <div className="mb-4 p-4 bg-white rounded-lg border-2 border-blue-300 min-h-16">
-              <p className="text-xs text-gray-500 mb-2">Your answer:</p>
-              <div className="flex flex-wrap gap-2">
-                {usedWords.map((word, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => onRemoveWord(qIndex, idx)}
-                    disabled={showResults}
-                    className={`px-3 py-2 rounded-lg font-medium ${
-                      showResults && isCorrect
-                        ? "bg-green-100 text-green-700"
-                        : showResults && !isCorrect
-                        ? "bg-red-100 text-red-700"
-                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
-                    }`}>
-                    {word}
-                  </button>
-                ))}
-                {usedWords.length === 0 && (
-                  <span className="text-gray-400 italic">
-                    Click words below to build sentence...
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {!showResults && (
-              <div className="flex flex-wrap gap-2">
-                {availableWords.map((word, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => onWordClick(qIndex, word)}
-                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-100 cursor-pointer transition-colors">
-                    {word}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {showResults && (
-              <div
-                className={`mt-3 p-3 rounded border-l-4 ${
-                  isCorrect
-                    ? "bg-green-50 border-green-400"
-                    : "bg-red-50 border-red-400"
-                }`}>
-                <p className="text-sm text-gray-700">
-                  <span className="font-bold">
-                    {isCorrect ? "✅ Correct!" : "❌ Incorrect."}
-                  </span>
-                  {!isCorrect && ` Correct answer: ${q.correct}`}
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-
-    {!showResults ? (
-      <button
-        onClick={onSubmit}
-        disabled={
-          Object.keys(sentenceAnswers).length < total ||
-          Object.values(sentenceAnswers).some((ans) => ans.length === 0)
-        }
-        className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Submit Answers
-      </button>
-    ) : (
-      <ScoreDisplay score={score} total={total} onReset={onReset} />
-    )}
-  </div>
-);
-
-// Score Display Component
-const ScoreDisplay = ({ score, total, onReset }) => {
-  const percentage = Math.round((score / total) * 100);
-
-  return (
-    <div>
-      <div className="mb-6 p-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-center">
-        <p className="text-xl mb-2">Your Score</p>
-        <p className="text-5xl font-bold mb-2">
-          {score} / {total}
-        </p>
-        <p className="text-2xl font-semibold mb-2">{percentage}%</p>
-        <p className="text-lg">
-          {percentage === 100
-            ? "🎉 Perfect! You mastered this!"
-            : percentage >= 90
-            ? "🌟 Excellent! Almost perfect!"
-            : percentage >= 70
-            ? "👍 Great job! Keep practicing!"
-            : percentage >= 50
-            ? "📚 Good effort! Review and try again!"
-            : "💪 Keep studying! You'll get it!"}
-        </p>
-      </div>
-
-      <button
-        onClick={onReset}
-        className="w-full bg-gray-500 text-white py-4 rounded-lg font-bold text-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
-        <RefreshCw className="w-5 h-5" />
-        Try Again
-      </button>
     </div>
   );
 };
