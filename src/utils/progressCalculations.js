@@ -43,7 +43,7 @@ export const isMasteredTopic = (topicProgress) => {
 /**
  * Get weak areas from progress data
  */
-export const identifyWeakAreas = (progress, cases, verbs) => {
+export const identifyWeakAreas = (progress, cases, verbs, prepositions) => {
   const weakAreas = [];
 
   // Check cases
@@ -62,13 +62,23 @@ export const identifyWeakAreas = (progress, cases, verbs) => {
     }
   });
 
+  // Check prepositions
+  if (prepositions) {
+    Object.keys(progress.prepositions || {}).forEach((index) => {
+      const topicProgress = progress.prepositions[index];
+      if (isWeakTopic(topicProgress)) {
+        weakAreas.push(prepositions[index].name);
+      }
+    });
+  }
+
   return weakAreas;
 };
 
 /**
  * Get mastered topics from progress data
  */
-export const identifyMasteredTopics = (progress, cases, verbs) => {
+export const identifyMasteredTopics = (progress, cases, verbs, prepositions) => {
   const masteredTopics = [];
 
   // Check cases
@@ -86,6 +96,16 @@ export const identifyMasteredTopics = (progress, cases, verbs) => {
       masteredTopics.push(verbs[index].name);
     }
   });
+
+  // Check prepositions
+  if (prepositions) {
+    Object.keys(progress.prepositions || {}).forEach((index) => {
+      const topicProgress = progress.prepositions[index];
+      if (isMasteredTopic(topicProgress)) {
+        masteredTopics.push(prepositions[index].name);
+      }
+    });
+  }
 
   return masteredTopics;
 };

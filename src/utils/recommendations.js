@@ -11,7 +11,8 @@ export const getRecommendedTopic = (
   progress,
   reviewSchedule,
   cases,
-  verbs
+  verbs,
+  prepositions
 ) => {
   // Priority 1: Weak areas
   if (progress.weakAreas && progress.weakAreas.length > 0) {
@@ -35,6 +36,15 @@ export const getRecommendedTopic = (
   for (let i = 0; i < verbs.length; i++) {
     if (!progress.verbs || !progress.verbs[i]) {
       return { type: "new", section: "verbs", index: i };
+    }
+  }
+
+  // Priority 3: New topics (prepositions)
+  if (prepositions) {
+    for (let i = 0; i < prepositions.length; i++) {
+      if (!progress.prepositions || !progress.prepositions[i]) {
+        return { type: "new", section: "prepositions", index: i };
+      }
     }
   }
 

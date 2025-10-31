@@ -7,6 +7,7 @@ export const useQuiz = () => {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [fillBlankAnswers, setFillBlankAnswers] = useState({});
   const [sentenceAnswers, setSentenceAnswers] = useState({});
+  const [matchPairsAnswers, setMatchPairsAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
 
@@ -17,6 +18,7 @@ export const useQuiz = () => {
     setQuizAnswers({});
     setFillBlankAnswers({});
     setSentenceAnswers({});
+    setMatchPairsAnswers({});
     setShowResults(false);
     setScore(0);
   }, []);
@@ -43,6 +45,8 @@ export const useQuiz = () => {
     setFillBlankAnswers,
     sentenceAnswers,
     setSentenceAnswers,
+    matchPairsAnswers,
+    setMatchPairsAnswers,
     showResults,
     setShowResults,
     score,

@@ -5,6 +5,7 @@ import { TrendingUp, Target, Calendar, Star, Download, Upload } from "lucide-rea
 import { cases } from "./data/cases";
 import { declensionTables } from "./data/declensionTables";
 import { verbs } from "./data/verbs";
+import { prepositions } from "./data/prepositions";
 
 // Hooks
 import { useProgress } from "./hooks/useProgress";
@@ -26,17 +27,22 @@ import Footer from "./components/layout/Footer";
 // Section Components
 import CasesSection from "./components/cases/CasesSection";
 import VerbsSection from "./components/verbs/VerbsSection";
+import PrepositionsSection from "./components/prepositions/PrepositionsSection";
+
+// Shared Components
+import ExportButton from "./components/shared/ExportButton";
 
 const PolishGrammarApp = () => {
   // UI State
   const [section, setSection] = useState("dashboard");
   const [currentCase, setCurrentCase] = useState(0);
   const [currentVerb, setCurrentVerb] = useState(0);
+  const [currentPreposition, setCurrentPreposition] = useState(0);
   const [mode, setMode] = useState("learn");
   const [difficulty, setDifficulty] = useState("beginner");
 
   // Custom Hooks
-  const { progress, setProgress, reviewSchedule, updateProgress } = useProgress(cases, verbs);
+  const { progress, setProgress, reviewSchedule, updateProgress } = useProgress(cases, verbs, prepositions);
   const quiz = useQuiz();
   useStreak(progress, setProgress);
 
@@ -82,6 +88,41 @@ const PolishGrammarApp = () => {
       }
 
       updateProgress("verbs", currentVerb, correctCount, totalQuestions);
+    } else if (section === "prepositions") {
+      const currentPrepositionData = prepositions[currentPreposition];
+
+      if (mode === "quiz") {
+        const quizData = currentPrepositionData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentPrepositionData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "matchpairs") {
+        const matchData = currentPrepositionData.matchPairs[difficulty] || [];
+        totalQuestions = matchData.length;
+        matchData.forEach((item, index) => {
+          const userAnswers = quiz.matchPairsAnswers[index] || [];
+          const pairs = item.pairs;
+          let pairCorrectCount = 0;
+          pairs.forEach((pair, pIndex) => {
+            if (userAnswers[pIndex] === pair.case) {
+              pairCorrectCount++;
+            }
+          });
+          // Count as correct if all pairs in the exercise are matched correctly
+          if (pairCorrectCount === pairs.length) {
+            correctCount++;
+          }
+        });
+      }
+
+      updateProgress("prepositions", currentPreposition, correctCount, totalQuestions);
     }
 
     quiz.setScore(correctCount);
@@ -123,6 +164,7 @@ const PolishGrammarApp = () => {
   // Computed values
   const currentCaseData = section === "cases" ? cases[currentCase] : null;
   const currentVerbData = section === "verbs" ? verbs[currentVerb] : null;
+  const currentPrepositionData = section === "prepositions" ? prepositions[currentPreposition] : null;
   const overallAccuracy = calculateOverallAccuracy(progress);
 
   return (
@@ -337,11 +379,11 @@ const PolishGrammarApp = () => {
 
             {/* Data Management */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="font-bold text-gray-800 text-xl mb-4">Manage Your Progress</h3>
+              <h3 className="font-bold text-gray-800 text-xl mb-4">Manage Your Data</h3>
               <p className="text-sm text-gray-600 mb-4">
                 ⚠️ Your progress is stored in your browser's memory. Export your data to save it permanently!
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleExportProgress}
                   className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors"
@@ -359,6 +401,12 @@ const PolishGrammarApp = () => {
                     className="hidden"
                   />
                 </label>
+                <ExportButton
+                  cases={cases}
+                  verbs={verbs}
+                  prepositions={prepositions}
+                  declensionTables={declensionTables}
+                />
               </div>
             </div>
           </div>
@@ -404,6 +452,29 @@ const PolishGrammarApp = () => {
             handleReset={handleReset}
             handleSubmit={handleSubmit}
             setQuizAnswers={quiz.setQuizAnswers}
+          />
+        )}
+
+        {/* Prepositions Section */}
+        {section === "prepositions" && currentPrepositionData && (
+          <PrepositionsSection
+            prepositions={prepositions}
+            currentPreposition={currentPreposition}
+            setCurrentPreposition={setCurrentPreposition}
+            currentPrepositionData={currentPrepositionData}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            matchPairsAnswers={quiz.matchPairsAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+            setMatchPairsAnswers={quiz.setMatchPairsAnswers}
           />
         )}
 

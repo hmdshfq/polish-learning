@@ -6,10 +6,11 @@ import { calculateNextReviewDate } from "../utils/spacedRepetition";
 /**
  * Custom hook for managing learning progress
  */
-export const useProgress = (cases, verbs) => {
+export const useProgress = (cases, verbs, prepositions) => {
   const [progress, setProgress] = useLocalStorage("polish-grammar-progress", {
     cases: {},
     verbs: {},
+    prepositions: {},
     totalScore: 0,
     totalAttempts: 0,
     streak: 0,
@@ -62,7 +63,9 @@ export const useProgress = (cases, verbs) => {
         const topicName =
           topicType === "cases"
             ? cases[topicIndex].name
-            : verbs[topicIndex].name;
+            : topicType === "verbs"
+            ? verbs[topicIndex].name
+            : prepositions[topicIndex].name;
 
         if (percentage < 70) {
           if (!newProgress.weakAreas.includes(topicName)) {
@@ -99,7 +102,7 @@ export const useProgress = (cases, verbs) => {
         [topicId]: newReview,
       }));
     },
-    [cases, verbs, reviewSchedule, setProgress, setReviewSchedule]
+    [cases, verbs, prepositions, reviewSchedule, setProgress, setReviewSchedule]
   );
 
   /**
@@ -109,6 +112,7 @@ export const useProgress = (cases, verbs) => {
     setProgress({
       cases: {},
       verbs: {},
+      prepositions: {},
       totalScore: 0,
       totalAttempts: 0,
       streak: 0,

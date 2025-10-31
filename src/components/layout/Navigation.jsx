@@ -5,6 +5,7 @@ const Navigation = ({ section, onSectionChange }) => {
     { id: "dashboard", label: "📊 Dashboard", colors: "from-green-500 to-teal-500" },
     { id: "cases", label: "📚 Cases", colors: "bg-indigo-600" },
     { id: "verbs", label: "⚡ Verbs", colors: "bg-purple-600" },
+    { id: "prepositions", label: "🔗 Prepositions", colors: "bg-teal-600" },
   ];
 
   return (
