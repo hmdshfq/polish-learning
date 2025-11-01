@@ -125,13 +125,23 @@ export const cases = [
       "Like saying 'of' in English - 'house of Maria' or 'I don't have' (absence)",
     examples: [
       {
+        polish: "Mam mało czasu.",
+        english: "I have little time.",
+        highlight: "czasu",
+      },
+      {
+        polish: "Nie mam czasu.",
+        english: "I don't have time.",
+        highlight: "czasu",
+      },
+      {
         polish: "To jest dom Marii.",
         english: "This is Maria's house.",
         highlight: "Marii",
       },
       {
-        polish: "Nie mam czasu.",
-        english: "I don't have time.",
+        polish: "Mam dużo czasu.",
+        english: "I have a lot time.",
         highlight: "czasu",
       },
     ],

@@ -10,6 +10,33 @@ export const pronouns = [
 
     analogy: "Think of personal pronouns like actors on a stage. In Nominative case, they're the ones performing the action (the subject). In Accusative case, they're receiving the action (the direct object). Just like in English where 'I' becomes 'me' when receiving action ('He sees me'), Polish pronouns also change form, but the changes are more consistent across all pronouns.",
 
+    examples: [
+        {
+          polish: "Ja lubię kawę.",
+          english: "I like coffee."
+        },
+        {
+          polish: "Ty jesteś studentem.",
+          english: "You are a student."
+        },
+        {
+          polish: "On czyta książkę.",
+          english: "He is reading a book."
+        },
+        {
+          polish: "Ona ma kota.",
+          english: "She has a cat."
+        },
+        {
+          polish: "My idziemy do kina.",
+          english: "We are going to the cinema."
+        },
+        {
+          polish: "Wy macie pytanie.",
+          english: "You (plural/formal) have a question."
+        }
+      ],
+
     pronounTable: {
       description: "Personal pronouns change form based on their role in the sentence. Here are the Nominative (subject) and Accusative (direct object) forms:",
       forms: [
@@ -483,7 +510,34 @@ export const pronouns = [
   level: "A2",
   icon: "🏠",
   explanation: "Possessive pronouns in Polish show ownership and must agree in gender, number, and case with the noun they describe (not with the owner). This is different from English! For example, 'her book' is 'jej książka' (feminine) but 'her cat' is 'jej kot' (masculine) - 'jej' stays the same, but in other pronouns the ending changes.",
-  analogy: "Think of possessive pronouns as chameleons that change their appearance to match the thing being owned, not the owner. In English, 'his' stays 'his' whether it's 'his car' or 'his house.' In Polish, 'jego' (his) stays the same, but 'mój' (my) becomes 'moja' or 'moje' depending on what you own.",
+      analogy: "Think of possessive pronouns as chameleons that change their appearance to match the thing being owned, not the owner. In English, 'his' stays 'his' whether it's 'his car' or 'his house.' In Polish, 'jego' (his) stays the same, but 'mój' (my) becomes 'moja' or 'moje' depending on what you own.",
+
+    examples: [
+        {
+          polish: "To jest mój dom.",
+          english: "This is my house."
+        },
+        {
+          polish: "To jest moja książka.",
+          english: "This is my book."
+        },
+        {
+          polish: "To jest moje okno.",
+          english: "This is my window."
+        },
+        {
+          polish: "Widzę jego dom.",
+          english: "I see his house."
+        },
+        {
+          polish: "Rozmawiam z jej matką.",
+          english: "I'm talking with her mother."
+        },
+        {
+          polish: "Myślę o ich problemach.",
+          english: "I'm thinking about their problems."
+        }
+      ],
 
   possessivePronouns: [
     {
@@ -995,6 +1049,33 @@ export const pronouns = [
   explanation: "Demonstrative pronouns in Polish point to specific things, people, or concepts. The most common are 'ten/ta/to' (this/that - near) and 'tamten/tamta/tamto' (that - far). Like possessive pronouns, they must agree in gender, number, and case with the noun they refer to. Polish also has 'taki/taka/takie' meaning 'such' or 'this kind of'.",
   analogy: "Think of demonstrative pronouns as pointing fingers that change shape depending on what they're pointing at. 'Ten' is like pointing at something close (this man), 'ta' points at something feminine close (this woman), and 'tamten' points at something far away (that man over there).",
 
+    examples: [
+        {
+          polish: "Ten dom jest duży.",
+          english: "This house is big."
+        },
+        {
+          polish: "Ta książka jest ciekawa.",
+          english: "This book is interesting."
+        },
+        {
+          polish: "To dziecko jest grzeczne.",
+          english: "This child is well-behaved."
+        },
+        {
+          polish: "Tamten dom jest stary.",
+          english: "That house (over there) is old."
+        },
+        {
+          polish: "Taki piękny dzień!",
+          english: "Such a beautiful day!"
+        },
+        {
+          polish: "Nie lubię takiej muzyki.",
+          english: "I don't like this kind of music."
+        }
+      ],
+
   demonstrativeTypes: [
     {
       type: "ten/ta/to",
@@ -1502,6 +1583,33 @@ export const pronouns = [
   icon: "❓",
   explanation: "Interrogative pronouns in Polish are used to ask questions. The main ones are 'kto' (who), 'co' (what), 'jaki/jaka/jakie' (what kind of), 'który/która/które' (which), and 'czyj/czyja/czyje' (whose). Like other pronouns, they decline through cases, and some must agree in gender and number with the noun they refer to.",
   analogy: "Think of interrogative pronouns as question magnets that pull information toward them. 'Kto' always asks about people and is grammatically masculine. 'Co' asks about things and never changes for gender. 'Jaki', 'który', and 'czyj' are like adjustable tools that change shape to match what you're asking about.",
+
+    examples: [
+        {
+          polish: "Kto to jest?",
+          english: "Who is this?"
+        },
+        {
+          polish: "Co to jest?",
+          english: "What is this?"
+        },
+        {
+          polish: "Jaki to kolor?",
+          english: "What color is it?"
+        },
+        {
+          polish: "Który autobus jedzie do centrum?",
+          english: "Which bus goes to the center?"
+        },
+        {
+          polish: "Czyj to dom?",
+          english: "Whose house is this?"
+        },
+        {
+          polish: "Z kim rozmawiasz?",
+          english: "Who are you talking with?"
+        }
+      ],
 
   interrogativeTypes: [
     {
