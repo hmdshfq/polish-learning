@@ -38,23 +38,23 @@ const VerbPrepositionSection = ({
           📍 Common Verb-Preposition Combinations
         </h3>
         <div className="space-y-4">
-          {currentVerbPrepositionData.commonPatterns.slice(0, 3).map(
+          {currentVerbPrepositionData.commonPatterns.patterns.slice(0, 3).map(
             (pattern, idx) => (
               <div key={idx} className="p-4 bg-white border-l-4 border-red-500 rounded">
                 <div className="font-bold text-red-700 mb-2">
-                  {pattern.preposition}
+                  {pattern.pattern}
                 </div>
                 <div className="text-sm text-gray-600 mb-3">
                   <span className="font-semibold">Case:</span> {pattern.case}
                 </div>
                 <div className="space-y-2">
-                  {pattern.examples?.slice(0, 3).map((ex, eIdx) => (
-                    <div key={eIdx} className="text-sm">
+                  {pattern.verbs?.slice(0, 3).map((verb, vIdx) => (
+                    <div key={vIdx} className="text-sm">
                       <span className="font-semibold text-gray-800">
-                        {ex.polish}
+                        {verb.polish}
                       </span>{" "}
                       <span className="text-gray-600 italic">
-                        ({ex.english})
+                        ({verb.english})
                       </span>
                     </div>
                   ))}
@@ -76,13 +76,13 @@ const VerbPrepositionSection = ({
           💭 Emotion Verbs with Prepositions
         </h3>
         <div className="space-y-3">
-          {currentVerbPrepositionData.emotionVerbs.slice(0, 4).map(
+          {currentVerbPrepositionData.emotionVerbs.verbs.slice(0, 4).map(
             (verb, idx) => (
               <div key={idx} className="p-3 bg-red-50 border border-red-200 rounded">
                 <div className="font-bold text-red-800">{verb.verb}</div>
                 <div className="text-sm text-gray-600">{verb.english}</div>
                 <div className="text-sm text-gray-700 mt-1">
-                  {verb.prepositionUsage}
+                  {verb.preposition}
                 </div>
               </div>
             )
@@ -101,13 +101,13 @@ const VerbPrepositionSection = ({
           💬 Communication Verbs with Prepositions
         </h3>
         <div className="space-y-3">
-          {currentVerbPrepositionData.communicationVerbs.slice(0, 4).map(
+          {currentVerbPrepositionData.communicationVerbs.verbs.slice(0, 4).map(
             (verb, idx) => (
               <div key={idx} className="p-3 bg-red-50 border border-red-200 rounded">
                 <div className="font-bold text-red-800">{verb.verb}</div>
                 <div className="text-sm text-gray-600">{verb.english}</div>
                 <div className="text-sm text-gray-700 mt-1">
-                  {verb.prepositionUsage}
+                  {verb.preposition}
                 </div>
               </div>
             )
