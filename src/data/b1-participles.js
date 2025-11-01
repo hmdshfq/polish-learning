@@ -6,13 +6,11 @@ export const b1Participles = [
     level: "B1",
     icon: "📝",
 
-    explanation: "Master the sophisticated world of Polish participles! Participles are verb forms that function as adjectives, allowing you to create complex, elegant descriptions and avoid repetitive sentences. Polish has several types of participles: active present (reading), active past (having read), passive present (being read), and passive past (read/having been read). Understanding participles is essential for academic and literary Polish, formal writing, and sophisticated conversation. They appear frequently in newspapers, legal documents, and educated speech.",
+    explanation: "Master the sophisticated world of Polish participles! Participles are verb forms that function as adjectives, allowing you to create complex, elegant descriptions and avoid repetitive sentences. Polish has several types of participles: active present (reading), active past (having read), passive present (being read), and passive past (read/having been read). Understanding participles is essential for academic and literary Polish, formal writing, and sophisticated conversation. They appear frequently in newspapers, legal documents, and educated acts of speech.",
 
     analogy: "Think of participles as linguistic transformers - they're verbs that have 'transformed' into adjectives while keeping their verbal power. Just like how Superman can fly AND be a reporter, participles can describe things (like adjectives) AND show action (like verbs). Instead of saying 'The man who is reading a book is smart,' you can say 'The reading man is smart.' Participles help you pack more information into fewer words, making your Polish sound more sophisticated and natural - like upgrading from basic sentences to premium, high-efficiency language!",
 
-    participleTypes: {
-      title: "Types of Participles in Polish",
-      types: [
+    participleTypes: [
         {
           type: "Active Present Participle",
           polish: "Imiesłów przymiotnikowy czynny",
@@ -57,9 +55,7 @@ export const b1Participles = [
             { verb: "zrobić", participle: "zrobiony", english: "done/made", sentence: "Praca zrobiona starannie.", sentenceEng: "Work done carefully." }
           ]
         }
-      ]
-    },
-
+      ],
     participleFormation: {
       title: "How to Form Participles",
       activePresent: {
@@ -119,10 +115,7 @@ export const b1Participles = [
         ]
       }
     },
-
-    participleUsage: {
-      title: "How to Use Participles",
-      uses: [
+    participleUsage: [
         {
           use: "Attributive (like adjectives)",
           description: "Directly modifying nouns",
@@ -161,12 +154,8 @@ export const b1Participles = [
             { polish: "Książka napisana → Książka, która została napisana", english: "The written book → The book that was written" }
           ]
         }
-      ]
-    },
-
-    commonParticiples: {
-      title: "Common Participles in Everyday Polish",
-      everyday: [
+      ],
+    commonParticiples: [
         {
           category: "States and Conditions",
           participles: [
@@ -197,9 +186,7 @@ export const b1Participles = [
             { polish: "zakochany", english: "in love", example: "Jest zakochany w niej.", exampleEng: "He's in love with her." }
           ]
         }
-      ]
-    },
-
+      ],
     quiz: {
       beginner: [
         {
@@ -354,7 +341,6 @@ export const b1Participles = [
         }
       ]
     },
-
     fillBlanks: {
       beginner: [
         {
@@ -426,7 +412,6 @@ export const b1Participles = [
         }
       ]
     },
-
     matchPairs: {
       beginner: [
         {

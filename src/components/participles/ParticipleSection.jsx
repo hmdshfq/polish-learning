@@ -50,8 +50,8 @@ const ParticipleSection = ({
                   {pType.formation}
                 </div>
                 <div className="text-sm text-gray-700 mb-2">
-                  <span className="font-semibold">Function:</span>{" "}
-                  {pType.function}
+                  <span className="font-semibold">Meaning:</span>{" "}
+                  {pType.meaning}
                 </div>
                 <div className="space-y-1">
                   {pType.examples?.slice(0, 2).map((ex, eIdx) => (
@@ -86,7 +86,7 @@ const ParticipleSection = ({
             (usage, idx) => (
               <div key={idx} className="p-4 bg-violet-50 border border-violet-200 rounded">
                 <div className="font-bold text-violet-700 mb-2">
-                  {usage.usage}
+                  {usage.use}
                 </div>
                 <div className="text-sm text-gray-600 mb-2">
                   {usage.explanation}
