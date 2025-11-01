@@ -6,6 +6,18 @@ import { cases } from "./data/cases";
 import { declensionTables } from "./data/declensionTables";
 import { verbs } from "./data/verbs";
 import { prepositions } from "./data/prepositions";
+import { reflexiveVerbs } from "./data/reflexiveVerbs";
+import { imperativeMood } from "./data/imperativeMood";
+import { b1Conditionals as conditionals } from "./data/b1-conditionals";
+import { b1MotionVerbs as motionVerbs } from "./data/b1-motion-verbs";
+import { b1Participles as participles } from "./data/b1-participles";
+import { b1VerbPreposition as verbPrepositions } from "./data/b1-verb-preposition";
+import { a2ThematicVocabulary as a2Vocabulary } from "./data/a2-thematic-vocabulary";
+import { b1ThematicVocabulary as b1Vocabulary } from "./data/b1-thematic-vocabulary";
+import { adjectives } from "./data/adjectives";
+import { numbers } from "./data/numbers";
+import { pronouns } from "./data/pronouns";
+import { a1Vocabulary } from "./data/vocabulary/a1-vocabulary";
 
 // Hooks
 import { useProgress } from "./hooks/useProgress";
@@ -28,6 +40,18 @@ import Footer from "./components/layout/Footer";
 import CasesSection from "./components/cases/CasesSection";
 import VerbsSection from "./components/verbs/VerbsSection";
 import PrepositionsSection from "./components/prepositions/PrepositionsSection";
+import ReflexiveVerbsSection from "./components/reflexiveVerbs/ReflexiveVerbsSection";
+import ImperativeMoodSection from "./components/imperativeMood/ImperativeMoodSection";
+import ConditionalsSection from "./components/conditionals/ConditionalsSection";
+import MotionVerbsSection from "./components/motionVerbs/MotionVerbsSection";
+import ParticipleSection from "./components/participles/ParticipleSection";
+import VerbPrepositionSection from "./components/verbPrepositions/VerbPrepositionSection";
+import A1VocabularySection from "./components/vocabulary/A1VocabularySection";
+import A2VocabularySection from "./components/vocabulary/A2VocabularySection";
+import B1VocabularySection from "./components/vocabulary/B1VocabularySection";
+import AdjectivesSection from "./components/adjectives/AdjectivesSection";
+import NumbersSection from "./components/numbers/NumbersSection";
+import PronounsSection from "./components/pronouns/PronounsSection";
 
 // Shared Components
 import ExportButton from "./components/shared/ExportButton";
@@ -38,6 +62,18 @@ const PolishGrammarApp = () => {
   const [currentCase, setCurrentCase] = useState(0);
   const [currentVerb, setCurrentVerb] = useState(0);
   const [currentPreposition, setCurrentPreposition] = useState(0);
+  const [currentReflexiveVerb, setCurrentReflexiveVerb] = useState(0);
+  const [currentImperative, setCurrentImperative] = useState(0);
+  const [currentConditional, setCurrentConditional] = useState(0);
+  const [currentMotionVerb, setCurrentMotionVerb] = useState(0);
+  const [currentParticiple, setCurrentParticiple] = useState(0);
+  const [currentVerbPreposition, setCurrentVerbPreposition] = useState(0);
+  const [currentA1Vocab, setCurrentA1Vocab] = useState(0);
+  const [currentA2Vocab, setCurrentA2Vocab] = useState(0);
+  const [currentB1Vocab, setCurrentB1Vocab] = useState(0);
+  const [currentAdjective, setCurrentAdjective] = useState(0);
+  const [currentNumber, setCurrentNumber] = useState(0);
+  const [currentPronoun, setCurrentPronoun] = useState(0);
   const [mode, setMode] = useState("learn");
   const [difficulty, setDifficulty] = useState("beginner");
 
@@ -123,6 +159,238 @@ const PolishGrammarApp = () => {
       }
 
       updateProgress("prepositions", currentPreposition, correctCount, totalQuestions);
+    } else if (section === "reflexiveVerbs") {
+      const currentData = reflexiveVerbs[currentReflexiveVerb];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      } else if (mode === "match") {
+        const matchData = currentData.matchPairs[difficulty] || [];
+        totalQuestions = matchData.length;
+        matchData.forEach((item, index) => {
+          const userAnswers = quiz.matchPairsAnswers[index] || [];
+          const pairs = item.pairs;
+          let pairCorrectCount = 0;
+          pairs.forEach((pair, pIndex) => {
+            if (userAnswers[pIndex] === pair.english) {
+              pairCorrectCount++;
+            }
+          });
+          if (pairCorrectCount === pairs.length) {
+            correctCount++;
+          }
+        });
+      }
+
+      updateProgress("reflexiveVerbs", currentReflexiveVerb, correctCount, totalQuestions);
+    } else if (section === "imperativeMood") {
+      const currentData = imperativeMood[currentImperative];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("imperativeMood", currentImperative, correctCount, totalQuestions);
+    } else if (section === "conditionals") {
+      const currentData = conditionals[currentConditional];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("conditionals", currentConditional, correctCount, totalQuestions);
+    } else if (section === "motionVerbs") {
+      const currentData = motionVerbs[currentMotionVerb];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("motionVerbs", currentMotionVerb, correctCount, totalQuestions);
+    } else if (section === "participles") {
+      const currentData = participles[currentParticiple];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("participles", currentParticiple, correctCount, totalQuestions);
+    } else if (section === "verbPrepositions") {
+      const currentData = verbPrepositions[currentVerbPreposition];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("verbPrepositions", currentVerbPreposition, correctCount, totalQuestions);
+    } else if (section === "a1Vocabulary") {
+      const currentData = a1Vocabulary[currentA1Vocab];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("a1Vocabulary", currentA1Vocab, correctCount, totalQuestions);
+    } else if (section === "a2Vocabulary") {
+      const currentData = a2Vocabulary[currentA2Vocab];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("a2Vocabulary", currentA2Vocab, correctCount, totalQuestions);
+    } else if (section === "b1Vocabulary") {
+      const currentData = b1Vocabulary[currentB1Vocab];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("b1Vocabulary", currentB1Vocab, correctCount, totalQuestions);
+    } else if (section === "adjectives") {
+      const currentData = adjectives[currentAdjective];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("adjectives", currentAdjective, correctCount, totalQuestions);
+    } else if (section === "numbers") {
+      const currentData = numbers[currentNumber];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("numbers", currentNumber, correctCount, totalQuestions);
+    } else if (section === "pronouns") {
+      const currentData = pronouns[currentPronoun];
+
+      if (mode === "quiz") {
+        const quizData = currentData.quiz[difficulty] || [];
+        totalQuestions = quizData.length;
+        quizData.forEach((q, index) => {
+          if (quiz.quizAnswers[index] === q.correct) correctCount++;
+        });
+      } else if (mode === "fillblank") {
+        const fillData = currentData.fillBlanks[difficulty] || [];
+        totalQuestions = fillData.length;
+        fillData.forEach((q, index) => {
+          if (quiz.fillBlankAnswers[index] === q.options[q.correct]) correctCount++;
+        });
+      }
+
+      updateProgress("pronouns", currentPronoun, correctCount, totalQuestions);
     }
 
     quiz.setScore(correctCount);
@@ -475,6 +743,260 @@ const PolishGrammarApp = () => {
             setQuizAnswers={quiz.setQuizAnswers}
             setFillBlankAnswers={quiz.setFillBlankAnswers}
             setMatchPairsAnswers={quiz.setMatchPairsAnswers}
+          />
+        )}
+
+        {/* Reflexive Verbs Section */}
+        {section === "reflexiveVerbs" && reflexiveVerbs[currentReflexiveVerb] && (
+          <ReflexiveVerbsSection
+            reflexiveVerbs={reflexiveVerbs}
+            currentReflexiveVerb={currentReflexiveVerb}
+            setCurrentReflexiveVerb={setCurrentReflexiveVerb}
+            currentReflexiveVerbData={reflexiveVerbs[currentReflexiveVerb]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            matchPairsAnswers={quiz.matchPairsAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+            setMatchPairsAnswers={quiz.setMatchPairsAnswers}
+          />
+        )}
+
+        {/* Imperative Mood Section */}
+        {section === "imperativeMood" && imperativeMood[currentImperative] && (
+          <ImperativeMoodSection
+            imperativeMood={imperativeMood}
+            currentImperative={currentImperative}
+            setCurrentImperative={setCurrentImperative}
+            currentImperativeData={imperativeMood[currentImperative]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Conditionals Section */}
+        {section === "conditionals" && conditionals[currentConditional] && (
+          <ConditionalsSection
+            conditionals={conditionals}
+            currentConditional={currentConditional}
+            setCurrentConditional={setCurrentConditional}
+            currentConditionalData={conditionals[currentConditional]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Motion Verbs Section */}
+        {section === "motionVerbs" && motionVerbs[currentMotionVerb] && (
+          <MotionVerbsSection
+            motionVerbs={motionVerbs}
+            currentMotionVerb={currentMotionVerb}
+            setCurrentMotionVerb={setCurrentMotionVerb}
+            currentMotionVerbData={motionVerbs[currentMotionVerb]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Participles Section */}
+        {section === "participles" && participles[currentParticiple] && (
+          <ParticipleSection
+            participles={participles}
+            currentParticiple={currentParticiple}
+            setCurrentParticiple={setCurrentParticiple}
+            currentParticipleData={participles[currentParticiple]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Verb Prepositions Section */}
+        {section === "verbPrepositions" && verbPrepositions[currentVerbPreposition] && (
+          <VerbPrepositionSection
+            verbPrepositions={verbPrepositions}
+            currentVerbPreposition={currentVerbPreposition}
+            setCurrentVerbPreposition={setCurrentVerbPreposition}
+            currentVerbPrepositionData={verbPrepositions[currentVerbPreposition]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* A1 Vocabulary Section */}
+        {section === "a1Vocabulary" && a1Vocabulary[currentA1Vocab] && (
+          <A1VocabularySection
+            a1Vocabulary={a1Vocabulary}
+            currentA1Vocab={currentA1Vocab}
+            setCurrentA1Vocab={setCurrentA1Vocab}
+            currentA1VocabData={a1Vocabulary[currentA1Vocab]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* A2 Vocabulary Section */}
+        {section === "a2Vocabulary" && a2Vocabulary[currentA2Vocab] && (
+          <A2VocabularySection
+            a2Vocabulary={a2Vocabulary}
+            currentA2Vocab={currentA2Vocab}
+            setCurrentA2Vocab={setCurrentA2Vocab}
+            currentA2VocabData={a2Vocabulary[currentA2Vocab]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* B1 Vocabulary Section */}
+        {section === "b1Vocabulary" && b1Vocabulary[currentB1Vocab] && (
+          <B1VocabularySection
+            b1Vocabulary={b1Vocabulary}
+            currentB1Vocab={currentB1Vocab}
+            setCurrentB1Vocab={setCurrentB1Vocab}
+            currentB1VocabData={b1Vocabulary[currentB1Vocab]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Adjectives Section */}
+        {section === "adjectives" && adjectives[currentAdjective] && (
+          <AdjectivesSection
+            adjectives={adjectives}
+            currentAdjective={currentAdjective}
+            setCurrentAdjective={setCurrentAdjective}
+            currentAdjectiveData={adjectives[currentAdjective]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Numbers Section */}
+        {section === "numbers" && numbers[currentNumber] && (
+          <NumbersSection
+            numbers={numbers}
+            currentNumber={currentNumber}
+            setCurrentNumber={setCurrentNumber}
+            currentNumberData={numbers[currentNumber]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
+          />
+        )}
+
+        {/* Pronouns Section */}
+        {section === "pronouns" && pronouns[currentPronoun] && (
+          <PronounsSection
+            pronouns={pronouns}
+            currentPronoun={currentPronoun}
+            setCurrentPronoun={setCurrentPronoun}
+            currentPronounData={pronouns[currentPronoun]}
+            mode={mode}
+            difficulty={difficulty}
+            quizAnswers={quiz.quizAnswers}
+            fillBlankAnswers={quiz.fillBlankAnswers}
+            showResults={quiz.showResults}
+            score={quiz.score}
+            handleModeChange={handleModeChange}
+            handleReset={handleReset}
+            handleSubmit={handleSubmit}
+            setQuizAnswers={quiz.setQuizAnswers}
+            setFillBlankAnswers={quiz.setFillBlankAnswers}
           />
         )}
 
