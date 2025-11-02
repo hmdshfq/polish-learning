@@ -38,13 +38,13 @@ const B1VocabularySection = ({
           📚 Vocabulary by Category
         </h3>
         <div className="space-y-4">
-          {currentB1VocabData.categories.slice(0, 4).map((category, cIdx) => (
+          {currentB1VocabData.categories.map((category, cIdx) => (
             <div key={cIdx} className="p-4 bg-white border-l-4 border-purple-500 rounded">
               <div className="font-bold text-purple-700 mb-3">
                 {category.category}
               </div>
               <div className="space-y-2">
-                {category.items?.slice(0, 6).map((item, iIdx) => (
+                {category.vocabulary?.map((item, iIdx) => (
                   <div key={iIdx} className="text-sm">
                     <span className="font-semibold text-gray-800">
                       {item.polish}
@@ -75,11 +75,11 @@ const B1VocabularySection = ({
           🔗 Common Collocations
         </h3>
         <div className="space-y-3">
-          {currentB1VocabData.commonCollocations.slice(0, 6).map(
+          {currentB1VocabData.commonCollocations.map(
             (collocation, idx) => (
               <div key={idx} className="p-3 bg-purple-50 border border-purple-200 rounded">
                 <div className="font-semibold text-purple-800">
-                  {collocation.collocation}
+                  {collocation.polish}
                 </div>
                 <div className="text-sm text-gray-600 italic">
                   {collocation.english}
@@ -160,15 +160,19 @@ const B1VocabularySection = ({
             </div>
           </div>
 
-          <div className="mb-6 p-4 bg-purple-50 rounded-lg">
-            <h3 className="font-bold text-gray-800 mb-2">📚 Context:</h3>
-            <p className="text-gray-700">{currentB1VocabData.context}</p>
-          </div>
+          {currentB1VocabData.explanation && (
+            <div className="mb-6 p-4 bg-purple-50 rounded-lg">
+              <h3 className="font-bold text-gray-800 mb-2">📚 Explanation:</h3>
+              <p className="text-gray-700">{currentB1VocabData.explanation}</p>
+            </div>
+          )}
 
-          <div className="mb-6 p-4 bg-green-50 rounded-lg">
-            <h3 className="font-bold text-gray-800 mb-2">💡 Learning Note:</h3>
-            <p className="text-gray-700">{currentB1VocabData.learningNote}</p>
-          </div>
+          {currentB1VocabData.analogy && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="font-bold text-blue-800 mb-2">💭 Memory Aid:</h3>
+              <p className="text-blue-900">{currentB1VocabData.analogy}</p>
+            </div>
+          )}
 
           {renderVocabularyList()}
           {renderCommonCollocations()}

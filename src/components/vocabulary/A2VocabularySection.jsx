@@ -38,11 +38,11 @@ const A2VocabularySection = ({
           📚 Vocabulary by Category
         </h3>
         <div className="space-y-4">
-          {currentA2VocabData.categories.slice(0, 4).map((category, cIdx) => (
+          {currentA2VocabData.categories.map((category, cIdx) => (
             <div key={cIdx} className="p-4 bg-white border-l-4 border-teal-500 rounded">
               <div className="font-bold text-teal-700 mb-3">{category.category}</div>
               <div className="space-y-2">
-                {category.items?.slice(0, 6).map((item, iIdx) => (
+                {category.vocabulary?.map((item, iIdx) => (
                   <div key={iIdx} className="text-sm">
                     <span className="font-semibold text-gray-800">
                       {item.polish}

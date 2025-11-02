@@ -30,7 +30,7 @@ const A1VocabularySection = ({
       : 0;
 
   const renderVocabularyList = () => {
-    if (!currentA1VocabData?.examples) return null;
+    if (!currentA1VocabData?.vocabulary) return null;
 
     return (
       <div className="mb-6">
@@ -38,10 +38,10 @@ const A1VocabularySection = ({
           📚 Vocabulary Items
         </h3>
         <div className="space-y-3">
-          {currentA1VocabData.examples.slice(0, 10).map((example, idx) => (
+          {currentA1VocabData.vocabulary.map((item, idx) => (
             <div key={idx} className="p-3 bg-sky-50 border border-sky-200 rounded">
-              <div className="font-semibold text-sky-800">{example.polish}</div>
-              <div className="text-sm text-gray-600">{example.english}</div>
+              <div className="font-semibold text-sky-800">{item.polish}</div>
+              <div className="text-sm text-gray-600">{item.english}</div>
             </div>
           ))}
         </div>
