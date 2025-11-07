@@ -119,19 +119,38 @@ const ParticipleSection = ({
         <h3 className="text-xl font-bold text-violet-700 mb-4">
           🎯 Common Participles
         </h3>
-        <div className="space-y-3">
-          {currentParticipleData.commonParticiples.slice(0, 6).map(
-            (participle, idx) => (
-              <div key={idx} className="p-3 bg-violet-50 border border-violet-200 rounded">
-                <div className="font-bold text-violet-800">
-                  {participle.participle}
-                </div>
-                <div className="text-sm text-gray-700 italic">
-                  {participle.english}
-                </div>
+        <div className="space-y-6">
+          {currentParticipleData.commonParticiples.map((category, catIdx) => (
+            <div key={catIdx}>
+              <h4 className="text-lg font-semibold text-violet-600 mb-3">
+                {category.category}
+              </h4>
+              <div className="space-y-2">
+                {category.participles?.map((participle, pIdx) => (
+                  <div
+                    key={pIdx}
+                    className="p-3 bg-violet-50 border border-violet-200 rounded">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-bold text-violet-800">
+                        {participle.polish}
+                      </div>
+                      <div className="text-sm text-gray-700 italic">
+                        {participle.english}
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      <div className="text-gray-800">
+                        {participle.example}
+                      </div>
+                      <div className="text-gray-600 italic">
+                        {participle.exampleEng}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )
-          )}
+            </div>
+          ))}
         </div>
       </div>
     );
