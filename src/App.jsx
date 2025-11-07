@@ -35,6 +35,7 @@ import Header from "./components/layout/Header";
 import Navigation from "./components/layout/Navigation";
 import DifficultySelector from "./components/layout/DifficultySelector";
 import Footer from "./components/layout/Footer";
+import ModeSelection from "./components/layout/ModeSelection";
 
 // Section Components
 import CasesSection from "./components/cases/CasesSection";
@@ -58,6 +59,7 @@ import ExportButton from "./components/shared/ExportButton";
 
 const PolishGrammarApp = () => {
   // UI State
+  const [appMode, setAppMode] = useState(null); // null, 'vocabulary', or 'grammar'
   const [section, setSection] = useState("dashboard");
   const [currentCase, setCurrentCase] = useState(0);
   const [currentVerb, setCurrentVerb] = useState(0);
@@ -412,6 +414,13 @@ const PolishGrammarApp = () => {
     handleReset();
   };
 
+  const handleModeSelection = (selectedMode) => {
+    setAppMode(selectedMode);
+    setSection("dashboard");
+    setMode("learn");
+    handleReset();
+  };
+
   const handleExportProgress = () => {
     exportProgressToJSON(progress, reviewSchedule, difficulty);
   };
@@ -435,13 +444,23 @@ const PolishGrammarApp = () => {
   const currentPrepositionData = section === "prepositions" ? prepositions[currentPreposition] : null;
   const overallAccuracy = calculateOverallAccuracy(progress);
 
+  // Show mode selection screen if no mode is selected
+  if (appMode === null) {
+    return <ModeSelection onSelectMode={handleModeSelection} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
       <div className="max-w-6xl mx-auto">
         <Header streak={progress.streak} />
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <Navigation section={section} onSectionChange={handleSectionChange} />
+          <Navigation
+            section={section}
+            onSectionChange={handleSectionChange}
+            appMode={appMode}
+            onModeChange={setAppMode}
+          />
           <DifficultySelector
             difficulty={difficulty}
             onDifficultyChange={setDifficulty}
@@ -571,77 +590,127 @@ const PolishGrammarApp = () => {
 
             {/* Progress by Topic */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="font-bold text-gray-800 text-xl mb-4">📊 Progress by Topic</h3>
+              <h3 className="font-bold text-gray-800 text-xl mb-4">
+                📊 Progress by Topic - {appMode === "vocabulary" ? "Vocabulary" : "Grammar"}
+              </h3>
               <div className="space-y-4">
-                {/* Cases Progress */}
-                <div>
-                  <h4 className="font-semibold text-gray-700 mb-2">Cases</h4>
-                  {cases.map((caseItem, index) => {
-                    const caseProgress = progress.cases[index];
-                    const accuracy = caseProgress
-                      ? Math.round((caseProgress.totalScore / (caseProgress.attempts * 10)) * 100)
-                      : 0;
-                    return (
-                      <div key={index} className="mb-3">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-700">{caseItem.name}</span>
-                          <span className="text-sm font-medium text-gray-700">
-                            {caseProgress ? `${accuracy}%` : "Not started"}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all ${
-                              accuracy >= 90
-                                ? "bg-green-500"
-                                : accuracy >= 70
-                                ? "bg-yellow-500"
-                                : accuracy > 0
-                                ? "bg-red-500"
-                                : "bg-gray-300"
-                            }`}
-                            style={{ width: `${accuracy}%` }}
-                          />
-                        </div>
+                {/* Vocabulary Mode: Show A1, A2, B1 Vocabulary */}
+                {appMode === "vocabulary" && (
+                  <>
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">A1 Vocabulary (Beginner)</h4>
+                      <div className="text-sm text-gray-600 mb-2">
+                        {a1Vocabulary.length} topics available
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
 
-                {/* Verbs Progress */}
-                <div>
-                  <h4 className="font-semibold text-gray-700 mb-2">Verbs</h4>
-                  {verbs.map((verb, index) => {
-                    const verbProgress = progress.verbs[index];
-                    const accuracy = verbProgress
-                      ? Math.round((verbProgress.totalScore / (verbProgress.attempts * 10)) * 100)
-                      : 0;
-                    return (
-                      <div key={index} className="mb-3">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-700">{verb.name}</span>
-                          <span className="text-sm font-medium text-gray-700">
-                            {verbProgress ? `${accuracy}%` : "Not started"}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all ${
-                              accuracy >= 90
-                                ? "bg-green-500"
-                                : accuracy >= 70
-                                ? "bg-yellow-500"
-                                : accuracy > 0
-                                ? "bg-red-500"
-                                : "bg-gray-300"
-                            }`}
-                            style={{ width: `${accuracy}%` }}
-                          />
-                        </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">A2 Vocabulary (Elementary)</h4>
+                      <div className="text-sm text-gray-600 mb-2">
+                        {a2Vocabulary.length} topics available
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">B1 Vocabulary (Intermediate)</h4>
+                      <div className="text-sm text-gray-600 mb-2">
+                        {b1Vocabulary.length} topics available
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Grammar Mode: Show Cases, Verbs, and other grammar topics */}
+                {appMode === "grammar" && (
+                  <>
+                    {/* Cases Progress */}
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">Cases</h4>
+                      {cases.map((caseItem, index) => {
+                        const caseProgress = progress.cases[index];
+                        const accuracy = caseProgress
+                          ? Math.round((caseProgress.totalScore / (caseProgress.attempts * 10)) * 100)
+                          : 0;
+                        return (
+                          <div key={index} className="mb-3">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-700">{caseItem.name}</span>
+                              <span className="text-sm font-medium text-gray-700">
+                                {caseProgress ? `${accuracy}%` : "Not started"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  accuracy >= 90
+                                    ? "bg-green-500"
+                                    : accuracy >= 70
+                                    ? "bg-yellow-500"
+                                    : accuracy > 0
+                                    ? "bg-red-500"
+                                    : "bg-gray-300"
+                                }`}
+                                style={{ width: `${accuracy}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Verbs Progress */}
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">Verbs</h4>
+                      {verbs.map((verb, index) => {
+                        const verbProgress = progress.verbs[index];
+                        const accuracy = verbProgress
+                          ? Math.round((verbProgress.totalScore / (verbProgress.attempts * 10)) * 100)
+                          : 0;
+                        return (
+                          <div key={index} className="mb-3">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-700">{verb.name}</span>
+                              <span className="text-sm font-medium text-gray-700">
+                                {verbProgress ? `${accuracy}%` : "Not started"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  accuracy >= 90
+                                    ? "bg-green-500"
+                                    : accuracy >= 70
+                                    ? "bg-yellow-500"
+                                    : accuracy > 0
+                                    ? "bg-red-500"
+                                    : "bg-gray-300"
+                                }`}
+                                style={{ width: `${accuracy}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Other Grammar Topics */}
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">Other Grammar Topics</h4>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>🔗 Prepositions - {prepositions.length} topics</div>
+                        <div>🔄 Reflexive Verbs - {reflexiveVerbs.length} topics</div>
+                        <div>🎯 Imperative Mood - {imperativeMood.length} topics</div>
+                        <div>❓ Conditionals - {conditionals.length} topics</div>
+                        <div>🚶 Motion Verbs - {motionVerbs.length} topics</div>
+                        <div>📝 Participles - {participles.length} topics</div>
+                        <div>📍 Verb+Prepositions - {verbPrepositions.length} topics</div>
+                        <div>✨ Adjectives - {adjectives.length} topics</div>
+                        <div>🔢 Numbers - {numbers.length} topics</div>
+                        <div>👤 Pronouns - {pronouns.length} topics</div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
